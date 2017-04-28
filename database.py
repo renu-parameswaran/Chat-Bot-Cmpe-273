@@ -35,6 +35,6 @@ def getAllResponses(questions,conn):
     dblist = []
     for row in result:
         id, ans, keyw, ques = row
-        dblist.append({"id":"%d" %id,"answer":"%s" % ans,"keyword":"%s" % keyw,"question":"%s" % ques,"numberOfMatchingKeywords":0})
+        dblist.append({"id":"%d" %id,"answer":"%s" % ans,"keywords":"%s" % keyw,"question":"%s" % ques,"numberOfMatchingKeywords":0,"matchingKeyWords": ""})
     log.writetofile(str(dblist))
-        
+    return dblist
