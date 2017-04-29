@@ -6,10 +6,10 @@ def getReply(userInput):
     userInputArray = lang_processor.split_message(userInput)
     userInputWithOnlyQuestionAndKeywords = lang_processor.removeUnwantedWords(userInputArray)
     questions,keywords = lang_processor.seperateQuestionAndKeywords(userInputWithOnlyQuestionAndKeywords)
-	
+    
     conn = database.connectToDB()
     response = handle_request(questions,keywords,userInput,conn)
-    database.storeSentResponse(userInput, response, keywords, questions[0], conn)
+
     return response
 
 
@@ -22,6 +22,7 @@ def handle_request(questions,keywords,userInput,conn):
        if(conn!="error"):
             allResponses=database.getAllResponses(questions[0],conn)
             allResponses=getMatchingKeywords(allResponses,keywords)
+            database.storeSentResponse(userInput, response, keywords, questions[0], conn)
 
     else :
      response = "please input proper question format to handle them"
@@ -47,27 +48,30 @@ def common_replies(user_input):
 
 #Function to get matching Keywords
 def getMatchingKeywords(allResponses,keywords):
-    spiltAllResponse = []
+    currentKeywordList = []
     for response in allResponses:
         length = len(response['keywords'].split(','))
         for i in range(0, length):
-            spiltAllResponse.append(response['keywords'].split(',')[i])
-        matchKeyList = []
-        for val1 in spiltAllResponse:
+            currentKeywordList.append(response['keywords'].split(',')[i])
+        matchKeywordList = []
+        for val1 in currentKeywordList:
             for val2 in keywords:
                 if(val2.lower() == val1.lower()):
-                    matchKeyList.append(val2)
+                    matchKeywordList.append(val2)
 
-        response['numberOfMatchingKeywords'] = len(matchKeyList)
-        lengthMKL =len(matchKeyList)
+        response['numberOfMatchingKeywords'] = len(matchKeywordList)
+        lengthMKL =len(matchKeywordList)
         stra =""
         for i in range(0,lengthMKL):
-        	stra = stra + matchKeyList[i] +","
+            stra = stra + matchKeywordList[i] +","
 
         response['matchingKeyWords'] = stra
-        response['matchingKeyWords']= (unicode.encode(response['matchingKeyWords'])).rstrip(',')
-        del matchKeyList[:]
-        del spiltAllResponse[:]
+        try:
+            response['matchingKeyWords']= (unicode.encode(response['matchingKeyWords'])).rstrip(',')
+        except:
+            response['matchingKeyWords']= ""
+        del matchKeywordList[:]
+        del currentKeywordList[:]
 
     log.writetofile("Adding matching keyword")
     log.writetofile(str(allResponses))
