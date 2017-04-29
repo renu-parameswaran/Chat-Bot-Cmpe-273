@@ -70,9 +70,11 @@ def getMatchingKeywords(allResponses,keywords):
             response['matchingKeyWords']= (unicode.encode(response['matchingKeyWords'])).rstrip(',')
         except:
             response['matchingKeyWords']= ""
+ 
         del matchKeywordList[:]
         del currentKeywordList[:]
 
+      
     log.writetofile("Adding matching keyword")
     log.writetofile(str(allResponses))
     return allResponses
