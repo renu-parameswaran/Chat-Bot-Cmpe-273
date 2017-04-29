@@ -1,6 +1,8 @@
 import pymysql
 import log
 import config
+import time
+from datetime import datetime
 
 # def doQuery(conn) :
 #     log.writetofile("Sending query to DB")
@@ -38,3 +40,16 @@ def getAllResponses(questions,conn):
         dblist.append({"id":"%d" %id,"answer":"%s" % ans,"keywords":"%s" % keyw,"question":"%s" % ques,"numberOfMatchingKeywords":0,"matchingKeyWords": ""})
     log.writetofile(str(dblist))
     return dblist
+
+def storeSentResponse(userInput,answer,keywords,questions,conn):
+    log.writetofile("storing sent response to DB..")
+    now = datetime.now()
+    now.strftime('%m/%d/%Y')
+
+    cur = conn.cursor()
+    insertstmt = "insert into sentresponses (UserQuestion,Answer,MatchingKeywords,QuestionPart,CurrentScore,Timestamp) values ('%s', '%s', '%s ', '%s', '%d', '%s')" % (userInput,answer,','.join(keywords),questions,1,now)
+    cur.execute(insertstmt)
+    log.writetofile("Insert to db successfully done")
+    conn.commit()
+
+

@@ -8,22 +8,24 @@ def getReply(userInput):
     questions,keywords = lang_processor.seperateQuestionAndKeywords(userInputWithOnlyQuestionAndKeywords)
 	
     conn = database.connectToDB()
-    response = handle_request(questions,keywords,conn)
-
+    response = handle_request(questions,keywords,userInput,conn)
+    database.storeSentResponse(userInput, response, keywords, questions[0], conn)
     return response
 
 
-def handle_request(questions,keywords,conn):
+def handle_request(questions,keywords,userInput,conn):
     count = len(questions)
     if (count == 0):
      response =  common_replies(keywords)
     elif(count == 1):
-       response = "hello this is from renu's code"
+       response = "Hello this is sara"
        if(conn!="error"):
             allResponses=database.getAllResponses(questions[0],conn)
             allResponses=getMatchingKeywords(allResponses,keywords)
+
     else :
      response = "please input proper question format to handle them"
+
 
     return response
 
