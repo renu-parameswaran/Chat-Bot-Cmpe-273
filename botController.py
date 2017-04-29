@@ -9,7 +9,7 @@ def getReply(userInput):
 	
     conn = database.connectToDB()
     response = handle_request(questions,keywords,userInput,conn)
-    database.storeSentResponse(userInput, response, keywords, questions[0], conn)
+
     return response
 
 
@@ -22,6 +22,7 @@ def handle_request(questions,keywords,userInput,conn):
        if(conn!="error"):
             allResponses=database.getAllResponses(questions[0],conn)
             allResponses=getMatchingKeywords(allResponses,keywords)
+            database.storeSentResponse(userInput, response, keywords, questions[0], conn)
 
     else :
      response = "please input proper question format to handle them"
@@ -65,7 +66,10 @@ def getMatchingKeywords(allResponses,keywords):
         	stra = stra + matchKeyList[i] +","
 
         response['matchingKeyWords'] = stra
-        response['matchingKeyWords']= (unicode.encode(response['matchingKeyWords'])).rstrip(',')
+        try:
+            response['matchingKeyWords']= (unicode.encode(response['matchingKeyWords'])).rstrip(',')
+        except:
+            response['matchingKeyWords']= ""
         del matchKeyList[:]
         del spiltAllResponse[:]
 
