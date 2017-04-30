@@ -1,13 +1,16 @@
 import lang_processor
 import database
 import log
+import sara
+import config
 
+currentMode="default"
 
 def getReply(userInput):
     userInputArray = lang_processor.split_message(userInput)
     userInputWithOnlyQuestionAndKeywords = lang_processor.removeUnwantedWords(userInputArray)
-    questions, keywords = lang_processor.seperateQuestionAndKeywords(userInputWithOnlyQuestionAndKeywords)
-
+    questions,keywords = lang_processor.seperateQuestionAndKeywords(userInputWithOnlyQuestionAndKeywords)
+    
     conn = database.connectToDB()
     response = handle_request(questions, keywords, userInput, conn)
 
@@ -19,14 +22,14 @@ def handle_request(questions, keywords, userInput, conn):
     if (count == 0):
         response = common_replies(keywords)
     elif (count == 1):
-        response = "Hello this is sara"
+        response = "Hello this is sara handling 1 question"
         if (conn != "error"):
             allResponses = database.getAllResponses(questions[0], conn)
             allResponses = getMatchingKeywords(allResponses, keywords)
             database.storeSentResponse(userInput, response, keywords, questions[0], conn)
             database.getAllPastResponses(questions[0],keywords,conn)
     else:
-        response = "please input proper question format to handle them"
+        response = "Please input proper question format to handle them"
 
     return response
 
@@ -72,6 +75,37 @@ def getMatchingKeywords(allResponses, keywords):
         del matchKeywordList[:]
         del currentKeywordList[:]
 
+      
     log.writetofile("Adding matching keyword")
     log.writetofile(str(allResponses))
     return allResponses
+
+#Function to get the Current Mode
+def currentWorkingMode(userInput):
+    global currentMode
+    if(currentMode=="default"):
+        if(userInput=="1"):
+            currentMode="chat"
+            response = config.chatResponse
+            log.writetofile(response)
+        elif (userInput=="2"):
+            currentMode="training"
+            response = config.trainingResponse
+            log.writetofile(response)
+        elif (userInput=="3"):
+            currentMode="statistics"
+            response = config.statisticsResponse
+            log.writetofile(response)
+        else:
+            response="Invalid Input. Please input the number to choose your mode"
+            log.writetofile(response)
+    elif (currentMode=="chat"):
+        response= getReply(userInput)
+    elif (currentMode=="training"):
+        response = "Call Training Function"
+    else:
+        response = "Call Statistics Function"
+        
+    return response
+        
+            

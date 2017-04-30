@@ -40,7 +40,7 @@ def handle_command(userInput, channel):
     """
     log.writetofile("entering handle command function")
     log.writetofile("User Input: " + userInput)
-    response = botController.getReply(userInput)
+    response = botController.currentWorkingMode(userInput)
     print response
     log.writetofile("bot reply: " + response)
     send_message(channel, response)
@@ -72,9 +72,10 @@ def slackListeToChannel():
     if slack_client.rtm_connect():
         log.writetofile("StarterBot connected and running!")
         print("StarterBot connected and running!")
+        send_message(config.channel,config.initialDisplayMessage)
         while True:
             command, channel = parse_slack_output(slack_client.rtm_read())
-            if command and channel:
+            if command and channel and channel==config.channel:
                 handle_command(command, channel)
             time.sleep(READ_WEBSOCKET_DELAY)
     else:
