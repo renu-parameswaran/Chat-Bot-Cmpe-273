@@ -52,4 +52,15 @@ def storeSentResponse(userInput,answer,keywords,questions,conn):
     log.writetofile("Insert to db successfully done")
     conn.commit()
 
-
+def getAllPastResponses(questions,keywords,conn):
+    log.writetofile("sending query to sentresponses db")
+    cur = conn.cursor()
+    sql = "SELECT * FROM sentresponses WHERE QuestionPart = '%s' and MatchingKeywords = '%s'" %(questions,','.join(keywords))
+    cur.execute(sql)
+    result = cur.fetchall()
+    dblist = []
+    for row in result:
+     id,quest,ans,matchkeyw,QP,CS,TS = row
+     dblist.append({"id": "%d" % id, "user question": "%s" % quest, "Answer": "%s" % ans, "Matching Keywords": "%s" % matchkeyw,"Question Part": "%s" % QP, "Current Score": "%s" % CS, "Time Stamp": "%s" % TS})
+    log.writetofile(str(dblist))
+    return dblist
