@@ -80,7 +80,7 @@ def updatePastResponse(id, feedback,conn):
     log.writetofile("CurrentScore decremented in db")
     conn.commit()
 
-    def storeNewResponse(ans,matchedKeywordList,ques,conn):
+ def storeNewResponse(ans,matchedKeywordList,ques,conn):
    if not matchedKeywordList:
      print "List is empty or null"
    else:
