@@ -64,3 +64,18 @@ def getAllPastResponses(questions,keywords,conn):
      dblist.append({"id": "%d" % id, "user question": "%s" % quest, "Answer": "%s" % ans, "Matching Keywords": "%s" % matchkeyw,"Question Part": "%s" % QP, "Current Score": "%s" % CS, "Time Stamp": "%s" % TS})
     log.writetofile(str(dblist))
     return dblist
+
+def updatePastResponse(id, feedback,conn):
+  cur = conn.cursor()
+  feedback = feedback.lower()
+  if(feedback == 'y' or feedback == 'yes'):
+    sql = "update sentresponses set CurrentScore = CurrentScore + 1 where ID = '%d'" % id
+    cur.execute(sql)
+    log.writetofile("CurrentScore incremented in db")
+    conn.commit()
+
+  elif(feedback == 'n' or feedback == 'no'):
+    sql = "update sentresponses set CurrentScore = CurrentScore - 1 where ID = '%d'" % id
+    cur.execute(sql)
+    log.writetofile("CurrentScore decremented in db")
+    conn.commit()
