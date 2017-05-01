@@ -79,3 +79,14 @@ def updatePastResponse(id, feedback,conn):
     cur.execute(sql)
     log.writetofile("CurrentScore decremented in db")
     conn.commit()
+
+    def storeNewResponse(ans,matchedKeywordList,ques,conn):
+   if not matchedKeywordList:
+     print "List is empty or null"
+   else:
+     matchedKeywordsListToCsv = ','.join(map(str,matchedKeywordList))
+     cur = conn.cursor()
+     insertStmt = "insert into responses (Answer,Keywords,Question) values ('%s','%s','%s')" % (ans,matchedKeywordsListToCsv,ques)
+     cur.execute(insertStmt)
+     log.writetofile("New Responses inserted to db")
+     conn.commit()
