@@ -24,12 +24,12 @@ def handle_request(questions, keywords, userInput, conn):
     elif (count == 1):
         response = "Hello this is sara handling 1 question"
         if (conn != "error"):
-            allResponses = database.getAllResponses(questions[0], conn)
-            allResponses = getMatchingKeywords(allResponses, keywords)
+            #allResponses = databazse.getAllResponses(questions[0], conn)
+            #allResponses = getMatchingKeywords(allResponses, keywords)
             database.storeSentResponse(userInput, response, keywords, questions[0], conn)
-            database.getAllPastResponses(questions[0],keywords,conn)
-            database.updatePastResponse(1, 'No', conn)
-            database.storeNewResponse('Sweeny', keywords, questions[0], conn)
+            #database.getAllPastResponses(questions[0],keywords,conn)
+            #database.updatePastResponse(1, 'No', conn)
+            #database.storeNewResponse('Sweeny', keywords, questions[0], conn)
     else:
         response = "Please input proper question format to handle them"
 
