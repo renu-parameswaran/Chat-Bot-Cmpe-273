@@ -33,6 +33,7 @@ def handle_request(questions, keywords, userInput, conn):
             #database.checkIDExists(123,conn)
             #database.checkRowExists(questions[0],'Classroom is Engg100',keywords,conn)
             #database.getPastResponse(1,conn)
+            #database.getPastResponseFromUserInput(userInput,conn)
     else:
         response = "Please input proper question format to handle them"
 
