@@ -129,3 +129,13 @@ def getPastResponse(id,conn):
      log.writetofile(str(dblist))
      return dblist
  
+def getPastResponseFromUserInput(userInp,conn):
+    cur = conn.cursor()
+    sql = "select UserQuestion from sentresponses where UserQuestion = '%s'" % userInp
+    row_count = cur.execute(sql)
+    if row_count > 0:
+        log.writetofile("User Input exists in sentresponses table")
+        return True
+    else:
+        log.writetofile("User Input does not exist in sentresponses table")
+        return False
