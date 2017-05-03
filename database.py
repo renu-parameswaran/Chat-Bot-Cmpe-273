@@ -28,17 +28,18 @@ def closeDbConnection(conn):
     conn.close()
 
 #To get responses from Database based on question 
-def getAllResponses(questions,conn):
+def getAllResponses(conn):
     log.writetofile("Sending query to DB")
     cur = conn.cursor()
-    sql = "SELECT * FROM responses WHERE Question = '%s'" % questions
+    sql = "SELECT * FROM responses"
     cur.execute(sql)
     result = cur.fetchall()
     dblist = []
     for row in result:
-        id, ans, keyw, ques = row
-        dblist.append({"id":"%d" %id,"answer":"%s" % ans,"keywords":"%s" % keyw,"question":"%s" % ques,"numberOfMatchingKeywords":0,"matchingKeyWords": ""})
-    log.writetofile(str(dblist))
+        id, ans, keyw, ques,img_url = row
+        numberOfDbKeywords = len(keyw.split(','))
+        dblist.append({"id":"%d" %id,"question":"%s" % ques.lower(),"answer":"%s" % ans.lower(),"numberOfDbKeywords":"%d" %numberOfDbKeywords,"DbKeywords":"%s" % keyw.lower(),"numberOfUserInputKeywords":0,"numberOfMatchingKeywords":0,"matchingKeyWords": "","nonMatchingKeyWords": "","image_url":img_url,"nonMatchingKeywordsInDB":""})
+    #log.writetofile(str(dblist))
     return dblist
 
 def storeSentResponse(userInput,answer,keywords,questions,conn):
@@ -108,7 +109,10 @@ def checkRowExists(ques,ans,keywordList,conn):
       print "keyword list is empty or null"
   else:
      keywordListToCsv = ','.join(map(str, keywordList))
-  sql = "select * from responses where Question = '%s' and Answer = '%s' and Keywords = '%s'" % (ques,ans,keywordListToCsv)
+  sql = "select * from responses where Answer = '%s' and Keywords = '%s'" % (ans,keywordListToCsv)
+
+  #to:do get all keywords and compare
+
   rows_count = cur.execute(sql)
   if rows_count > 0:
      log.writetofile("Row exists in response table")
@@ -130,12 +134,15 @@ def getPastResponse(id,conn):
      return dblist
  
 def getPastResponseFromUserInput(userInp,conn):
+
     cur = conn.cursor()
     sql = "select UserQuestion from sentresponses where UserQuestion = '%s'" % userInp
-    row_count = cur.execute(sql)
-    if row_count > 0:
-        log.writetofile("User Input exists in sentresponses table")
-        return True
-    else:
-        log.writetofile("User Input does not exist in sentresponses table")
-        return False
+    dblist = []
+    cur.execute(sql)
+    result = cur.fetchall()
+    for row in result:
+        dblist.append({"ID": "%d" % row[0], "UserQuestion": "%s" % row[1], "Answer": "%s" % row[2],
+                       "MatchingKeywords": "%s" % row[3],
+                       "QuestionPart": "%s" % row[4], "CurrentScore": "%d" % row[5], "Timestamp": "%s" % row[6]})
+        log.writetofile(str(dblist))
+        return dblist
