@@ -2,6 +2,9 @@
 import log
 import nltk
 import config
+from autocorrect import spell
+from nltk.corpus import wordnet
+#from PyDictionary import PyDictionary
 
 questionList = config.questionList
 
@@ -32,9 +35,25 @@ def removeUnwantedWords(input):
     posTagged = nltk.pos_tag(input)
     simplifiedTags = [(word, nltk.map_tag('en-ptb', 'universal', tag)) for word, tag in posTagged]
     for key,value in simplifiedTags:
-        if value not in 'ADP' and value not in 'DET' and value not in 'CONJ' and value not in 'PRT':
+        if value not in 'ADP' and value not in 'DET' and value not in 'CONJ' and value not in 'PRT' and key not in 'is':
             userInputWithOnlyQuestionAndKeywords.append(key)
         else:
             log.writetofile("blacklisted word: " + key)
 
     return userInputWithOnlyQuestionAndKeywords
+
+def autocorrect(word):
+
+    return spell(word)
+
+def getSynonyms(word):
+    synonyms = []
+
+    for syn in wordnet.synsets(word):
+        for l in syn.lemmas():
+            synonyms.append(unicode.encode(l.name()))
+
+    #dictionary = PyDictionary()
+    #print (dictionary.synonym(word))
+
+    return synonyms

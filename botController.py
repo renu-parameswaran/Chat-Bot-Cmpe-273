@@ -1,44 +1,100 @@
 import lang_processor
 import database
 import log
-import sara
 import config
+import operator
 
 currentMode="default"
+conn = database.connectToDB()
+
 
 def getReply(userInput):
+    global conn
     userInputArray = lang_processor.split_message(userInput)
     userInputWithOnlyQuestionAndKeywords = lang_processor.removeUnwantedWords(userInputArray)
     questions,keywords = lang_processor.seperateQuestionAndKeywords(userInputWithOnlyQuestionAndKeywords)
-    
-    conn = database.connectToDB()
-    response = handle_request(questions, keywords, userInput, conn)
+    response = handle_request(questions, keywords, userInput,userInputArray, conn)
 
     return response
 
 
-def handle_request(questions, keywords, userInput, conn):
+def handle_request(questions, keywords, userInput,userInputArray, conn):
     count = len(questions)
     if (count == 0):
-        response = common_replies(keywords)
+        response = common_replies(userInput)
     elif (count == 1):
-        response = "Hello this is sara handling 1 question"
+
         if (conn != "error"):
-            #allResponses = databazse.getAllResponses(questions[0], conn)
-            #allResponses = getMatchingKeywords(allResponses, keywords)
-            database.storeSentResponse(userInput, response, keywords, questions[0], conn)
-            #database.getAllPastResponses(questions[0],keywords,conn)
-            #database.updatePastResponse(1, 'No', conn)
-            #database.storeNewResponse('Sweeny', keywords, questions[0], conn)
-            #database.checkIDExists(123,conn)
-            #database.checkRowExists(questions[0],'Classroom is Engg100',keywords,conn)
-            #database.getPastResponse(1,conn)
-            #database.getPastResponseFromUserInput(userInput,conn)
+            response = pickBestResponse(keywords,userInput,userInputArray,questions[0],conn)
+        else:
+            response = config.dbConnectionError
+
     else:
-        response = "Please input proper question format to handle them"
+        response = config.twoQuestionsError
 
     return response
 
+
+def pickBestResponse(keywords,userInput,userInputArray,questionPartInUserInput,conn):
+
+    DBResponses = database.getAllResponses(conn)
+    DBResponses = getMatchingKeywords(DBResponses, keywords)
+    DBResponses.sort(key=operator.itemgetter('numberOfMatchingKeywords'),reverse=True)
+    log.writetofile("sorted:" + str(DBResponses))
+
+    for dbResponse in DBResponses:
+        #100% match for the entities. Return this response
+        if dbResponse['nonMatchingKeyWords']=="" and dbResponse['nonMatchingKeywordsInDB']=="":
+            log.writetofile("100% match found")
+            return dbResponse['answer']
+        #not 100%.
+        #perform spell check and find similar words
+        else:
+            if(dbResponse["numberOfMatchingKeywords"]>=1):
+                nonMatchingKeywords = dbResponse['nonMatchingKeyWords'].split(',')
+                nonMatchingKeywordsinDB = dbResponse['nonMatchingKeywordsInDB'].split(',')
+
+                for nonMatchingKeyword in nonMatchingKeywords:
+                    correctedKeyword = lang_processor.autocorrect(nonMatchingKeyword)
+                    if(correctedKeyword != nonMatchingKeyword):
+                        log.writetofile("spelling corrected:" + correctedKeyword)
+                    synonyms = lang_processor.getSynonyms(correctedKeyword)
+                    log.writetofile("synonyms for user input " +correctedKeyword + ":" + str(synonyms))
+
+                    for nonMatchingKeyword in nonMatchingKeywordsinDB:
+                        DBsynonyms = lang_processor.getSynonyms(nonMatchingKeyword)
+                        log.writetofile("synonyms for DB " +nonMatchingKeyword + ":" + str(DBsynonyms))
+
+                        if(set(DBsynonyms) == set(synonyms)):
+                            log.writetofile("matching synonym found.")
+                            dbResponse["numberOfMatchingKeywords"] = dbResponse["numberOfMatchingKeywords"]+1;
+
+    log.writetofile("after synonyms : "+str(DBResponses))
+
+    DBResponses.sort(key=operator.itemgetter('numberOfMatchingKeywords'),reverse=True)
+
+    responseNumber = 1
+    for dbResponse in DBResponses:
+        if dbResponse["numberOfMatchingKeywords"] !=0:
+            if responseNumber == 1:
+                firstResponseMatchingCount = dbResponse["numberOfMatchingKeywords"]
+                response = dbResponse["answer"]
+                responseNumber = responseNumber+1
+                questionPart = dbResponse["question"]
+            else:
+                if firstResponseMatchingCount == dbResponse["numberOfMatchingKeywords"]:
+                    if questionPart == questionPartInUserInput:
+                        return response
+                    elif questionPartInUserInput == dbResponse["question"]:
+                        response = dbResponse["answer"]
+                    else:
+                        response = config.ambiguousInput
+
+                return response
+        else:
+            return config.ambiguousInput
+    # pastResponses = database.getPastResponseFromUserInput(userInput,conn)
+    return config.noAppropriateResponseFound
 
 def common_replies(user_input):
     for i in user_input:
@@ -56,17 +112,40 @@ def common_replies(user_input):
 # Function to get matching Keywords
 def getMatchingKeywords(allResponses, keywords):
     currentKeywordList = []
+
+
     for response in allResponses:
-        length = len(response['keywords'].split(','))
+        length = len(response['DbKeywords'].split(','))
+
         for i in range(0, length):
-            currentKeywordList.append(response['keywords'].split(',')[i])
+            currentKeywordList.append(response['DbKeywords'].split(',')[i])
+
         matchKeywordList = []
+        notMatchingKeywordList = []
+        notMatchingKeywordListinDB = []
+
         for val1 in currentKeywordList:
             for val2 in keywords:
                 if (val2.lower() == val1.lower()):
-                    matchKeywordList.append(val2)
+                    matchKeywordList.append(val2.lower())
 
+        for val1 in keywords:
+            if val1 not in matchKeywordList:
+                notMatchingKeywordList.append(val1.lower())
+
+        for val1 in currentKeywordList:
+            if val1 not in matchKeywordList:
+                notMatchingKeywordListinDB.append(val1.lower())
+                response['nonMatchingKeywordsInDB'] = ','.join(notMatchingKeywordListinDB)
+
+
+        response['numberOfUserInputKeywords'] = len(keywords)
         response['numberOfMatchingKeywords'] = len(matchKeywordList)
+
+        if  response['numberOfUserInputKeywords'] != response['numberOfMatchingKeywords']:
+            response['nonMatchingKeyWords'] = unicode.encode(','.join(notMatchingKeywordList))
+
+
         lengthMKL = len(matchKeywordList)
         stra = ""
         for i in range(0, lengthMKL):
@@ -80,7 +159,7 @@ def getMatchingKeywords(allResponses, keywords):
 
         del matchKeywordList[:]
         del currentKeywordList[:]
-
+        del notMatchingKeywordList[:]
       
     log.writetofile("Adding matching keyword")
     log.writetofile(str(allResponses))
