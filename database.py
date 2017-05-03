@@ -80,7 +80,7 @@ def updatePastResponse(id, feedback,conn):
     log.writetofile("CurrentScore decremented in db")
     conn.commit()
 
- def storeNewResponse(ans,matchedKeywordList,ques,conn):
+def storeNewResponse(ans,matchedKeywordList,ques,conn):
    if not matchedKeywordList:
      print "List is empty or null"
    else:
@@ -90,3 +90,42 @@ def updatePastResponse(id, feedback,conn):
      cur.execute(insertStmt)
      log.writetofile("New Responses inserted to db")
      conn.commit()
+    
+def checkIDExists(id,conn):
+  cur = conn.cursor()
+  sql = "select ID from sentresponses where ID = '%d'" % id
+  rows_count = cur.execute(sql)
+  if rows_count > 0:
+      log.writetofile("ID exists in DB")
+      return True
+  else:
+      log.writetofile("ID does not exist in DB")
+      return False
+
+def checkRowExists(ques,ans,keywordList,conn):
+  cur = conn.cursor()
+  if not keywordList:
+      print "keyword list is empty or null"
+  else:
+     keywordListToCsv = ','.join(map(str, keywordList))
+  sql = "select * from responses where Question = '%s' and Answer = '%s' and Keywords = '%s'" % (ques,ans,keywordListToCsv)
+  rows_count = cur.execute(sql)
+  if rows_count > 0:
+     log.writetofile("Row exists in response table")
+     return True
+  else:
+      log.writetofile("Row does not exist in response table")
+      return False
+
+def getPastResponse(id,conn):
+  cur = conn.cursor()
+  dblist = []
+  sql = "select * from sentresponses where ID = '%d'" % id
+  cur.execute(sql)
+  result = cur.fetchall()
+  for row in result:
+     dblist.append({"ID": "%d" % row[0], "UserQuestion": "%s" % row[1], "Answer": "%s" % row[2], "MatchingKeywords": "%s" % row[3],
+                 "QuestionPart": "%s" % row[4], "CurrentScore": "%d" % row[5], "Timestamp": "%s" % row[6]})
+     log.writetofile(str(dblist))
+     return dblist
+ 
