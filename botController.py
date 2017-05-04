@@ -3,6 +3,7 @@ import database
 import log
 import config
 import operator
+import time
 
 currentMode = "default"
 userInputQuestions = []
@@ -125,16 +126,27 @@ def pickBestResponse(keywords,userInput,userInputArray,questionPartInUserInput,c
 
 def common_replies(user_input):
     for i in user_input:
-        if i in ("Hi sara"):
+        if i in ("hi sara"):
             response = "Hi! Welcome"
-        elif i in ("Thanks Sara"):
+        elif i in ("hello sara"):
+            response = "Hi..whatsup!?"
+        elif i in ("sara, i need some help "):
+            resposne = "What help do u need"
+        elif i in ("thank you so much for the answers"):
+            response = "You are welcome!"
+        elif i in ("thanks Sara"):
             response = "Welcome Sara"
         elif i in ("Its a great day"):
             response = "Yes, A Wonderful Day."
+        elif i in ("Can you improve your answers?"):
+            response = "Yes..sure"
+        elif i in ("How are you today?"):
+            response = "Im good, thanks! "
+        elif i in ("this is an amazing answer!"):
+            response = "I know it is! "
         else:
             response = "Sorry! Cannot Handle"
     return response
-
 
 # Function to get matching Keywords
 def getMatchingKeywords(allResponses, keywords):
@@ -317,3 +329,14 @@ def defaultMode():
     log.writetofile("Returning to default mode")
     return config.initialDisplayMessage
 
+def getMessage():
+    currentTime = int(time.strftime('%H:%M').split(':')[0])
+    if currentTime >= 6 and currentTime <= 13:
+        response = "Hello!"+" "+ "Good morning!"
+    elif currentTime >= 13 and currentTime <= 18:
+        response = "Hello" + " " + "Good afternoon!"
+    elif currentTime >= 18 and currentTime <= 22:
+        response = "Hello" + " " + "Good evening!"
+    else:
+        response = "Hello" + " "+ "Greetings. It's late and you should get some sleep!"
+    return response

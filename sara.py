@@ -32,7 +32,7 @@ def send_message(channel_id, message):
         icon_emoji=':robot_face:'
     )
 
-def handle_command(userInput, channel):
+def handle_command(userInput, channel, user):
     """
         Receives commands directed at the bot and determines if they
         are valid commands. If so, then acts on the commands. If not,
@@ -43,7 +43,8 @@ def handle_command(userInput, channel):
     response = botController.currentWorkingMode(userInput)
     print response
     log.writetofile("bot reply: " + response)
-    send_message(channel, response)
+    user = '<@{user}>'.format(user=user)
+    send_message(channel,"Hi" + user + "!. "+response)
 
 def parse_slack_output(slack_rtm_output):
     """
@@ -58,8 +59,8 @@ def parse_slack_output(slack_rtm_output):
             if output and 'text' in output and AT_BOT in output['text']:
                 # return text after the @ mention, whitespace removed
                 return output['text'].split(AT_BOT)[1].strip().lower(), \
-                       output['channel']
-    return None, None
+                       output['channel'],output['user']
+    return None, None, None
 
 BOT_ID = getBotID()
 
@@ -72,11 +73,12 @@ def slackListeToChannel():
     if slack_client.rtm_connect():
         log.writetofile("StarterBot connected and running!")
         print("StarterBot connected and running!")
-        send_message(config.channel,config.initialDisplayMessage)
+        greetings = botController.getMessage()
+        send_message(config.channel,greetings + config.initialDisplayMessage)
         while True:
-            command, channel = parse_slack_output(slack_client.rtm_read())
+            command, channel, user = parse_slack_output(slack_client.rtm_read())
             if command and channel and channel==config.channel:
-                handle_command(command, channel)
+                handle_command(command, channel, user)
             time.sleep(READ_WEBSOCKET_DELAY)
     else:
         log.writetofile("Connection failed. Invalid Slack token or bot ID?")
