@@ -4,15 +4,20 @@ import nltk
 import config
 from autocorrect import spell
 from nltk.corpus import wordnet
+import re
 #from PyDictionary import PyDictionary
 
 questionList = config.questionList
 
-def split_message(cmd):
+def split_message(userInput):
 
   #log.writetofile("splitting words")
-  str = cmd.lower().split(" ")
-  return str
+  userInputList = userInput.lower().split(" ")
+  userInputListWithAlphaNumeric = []
+  for str in userInputList:
+      userInputListWithAlphaNumeric.append(re.sub(r'\W+', '', str))
+  log.writetofile("UserInput list having only alphanumeric strings" + userInputListWithAlphaNumeric)
+  return userInputListWithAlphaNumeric
 
 def seperateQuestionAndKeywords(input):
     questionsInUserInput = []
@@ -35,7 +40,7 @@ def removeUnwantedWords(input):
     posTagged = nltk.pos_tag(input)
     simplifiedTags = [(word, nltk.map_tag('en-ptb', 'universal', tag)) for word, tag in posTagged]
     for key,value in simplifiedTags:
-        if value not in 'ADP' and value not in 'DET' and value not in 'CONJ' and value not in 'PRT' and key not in 'is':
+        if (key.lower() in config.questionList) or (value not in 'ADP' and value not in 'DET' and value not in 'CONJ' and value not in 'PRT' and key not in 'is'):
             userInputWithOnlyQuestionAndKeywords.append(key)
         else:
             log.writetofile("blacklisted word: " + key)
