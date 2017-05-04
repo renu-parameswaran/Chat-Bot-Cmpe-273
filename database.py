@@ -69,14 +69,16 @@ def getAllPastResponses(questions,keywords,conn):
 def updatePastResponse(id, feedback,conn):
   cur = conn.cursor()
   feedback = feedback.lower()
+  now = datetime.now()
+  now.strftime('%m/%d/%Y')
   if(feedback == 'y' or feedback == 'yes'):
-    sql = "update sentresponses set CurrentScore = CurrentScore + 1 where ID = '%d'" % id
+    sql = "update sentresponses set CurrentScore = CurrentScore + 1, Timestamp = '%s' where ID = '%d'" % (now,id)
     cur.execute(sql)
     log.writetofile("CurrentScore incremented in db")
     conn.commit()
 
   elif(feedback == 'n' or feedback == 'no'):
-    sql = "update sentresponses set CurrentScore = CurrentScore - 1 where ID = '%d'" % id
+    sql = "update sentresponses set CurrentScore = CurrentScore - 1, Timestamp = '%s' where ID = '%d'" % (now,id)
     cur.execute(sql)
     log.writetofile("CurrentScore decremented in db")
     conn.commit()
@@ -85,9 +87,12 @@ def storeNewResponse(ans,matchedKeywordList,ques,conn):
    if not matchedKeywordList:
      print "List is empty or null"
    else:
-     matchedKeywordsListToCsv = ','.join(map(str,matchedKeywordList))
+     #matchedKeywordsListToCsv = ','.join(map(str,matchedKeywordList))
      cur = conn.cursor()
-     insertStmt = "insert into responses (Answer,Keywords,Question) values ('%s','%s','%s')" % (ans,matchedKeywordsListToCsv,ques)
+     #decodedKeyword = (unicode.encode(matchedKeywordList))
+     #decodedQuestion = ((unicode.encode(ques)))
+     insertStmt = "insert into responses (Answer,Keywords,Question,image_url)* values ('%s','%s','%s','none')" % (ans,matchedKeywordList,ques)
+     #print insertStmt
      cur.execute(insertStmt)
      log.writetofile("New Responses inserted to db")
      conn.commit()
@@ -107,17 +112,15 @@ def checkRowExists(ques,ans,keywordList,conn):
   cur = conn.cursor()
   if not keywordList:
       print "keyword list is empty or null"
+      return False
   else:
-     keywordListToCsv = ','.join(map(str, keywordList))
-  sql = "select * from responses where Answer = '%s' and Keywords = '%s'" % (ans,keywordListToCsv)
-
-  #to:do get all keywords and compare
-
-  rows_count = cur.execute(sql)
-  if rows_count > 0:
+     #keywordListToCsv = ','.join(map(str, keywordList))
+    sql = "select * from responses where Question = '%s' and Answer = '%s' and Keywords = '%s'" % (ques,ans,keywordList)
+    rows_count = cur.execute(sql)
+    if rows_count > 0:
      log.writetofile("Row exists in response table")
      return True
-  else:
+    else:
       log.writetofile("Row does not exist in response table")
       return False
 
