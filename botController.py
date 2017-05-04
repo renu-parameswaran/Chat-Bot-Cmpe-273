@@ -46,6 +46,8 @@ def handle_request(questions, keywords, userInput,userInputArray, conn):
     return response
 
 
+
+
 def pickBestResponse(keywords,userInput,userInputArray,questionPartInUserInput,conn):
 
     DBResponses = database.getAllResponses(conn)
@@ -124,6 +126,7 @@ def pickBestResponse(keywords,userInput,userInputArray,questionPartInUserInput,c
     # pastResponses = database.getPastResponseFromUserInput(userInput,conn)
     return config.noAppropriateResponseFound
 
+	
 def common_replies(user_input):
     for i in user_input:
         if i in ("hi sara"):
