@@ -16,7 +16,7 @@ def split_message(userInput):
   userInputListWithAlphaNumeric = []
   for str in userInputList:
       userInputListWithAlphaNumeric.append(re.sub(r'\W+', '', str))
-  log.writetofile("UserInput list having only alphanumeric strings" + userInputListWithAlphaNumeric)
+  #log.writetofile("UserInput list having only alphanumeric strings" + userInputListWithAlphaNumeric)
   return userInputListWithAlphaNumeric
 
 def seperateQuestionAndKeywords(input):
