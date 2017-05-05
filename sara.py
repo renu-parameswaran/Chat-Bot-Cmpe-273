@@ -41,7 +41,6 @@ def handle_command(userInput, channel, user):
     log.writetofile("entering handle command function")
     log.writetofile("User Input: " + userInput)
     response = botController.currentWorkingMode(userInput)
-    print response
     log.writetofile("bot reply: " + response)
     user = '<@{user}>'.format(user=user)
     send_message(channel,"Hi" + user + "!. "+response)
@@ -56,10 +55,9 @@ def parse_slack_output(slack_rtm_output):
     output_list = slack_rtm_output
     if output_list and len(output_list) > 0:
         for output in output_list:
-            if output and 'text' in output and AT_BOT in output['text']:
-                # return text after the @ mention, whitespace removed
-                return output['text'].split(AT_BOT)[1].strip().lower(), \
-                       output['channel'],output['user']
+            #print output
+            if output and 'text' in output:
+                return output['text'], output['channel'],output['user']
     return None, None, None
 
 BOT_ID = getBotID()
@@ -71,13 +69,13 @@ EXAMPLE_COMMAND = "do"
 def slackListeToChannel():
     READ_WEBSOCKET_DELAY = 1 # 1 second delay between reading from firehose
     if slack_client.rtm_connect():
-        log.writetofile("StarterBot connected and running!")
-        print("StarterBot connected and running!")
+        log.writetofile("Sara is up and running!")
+        print("Sara is up and running running!")
         greetings = botController.getMessage()
         send_message(config.channel,greetings + config.initialDisplayMessage)
         while True:
             command, channel, user = parse_slack_output(slack_client.rtm_read())
-            if command and channel and channel==config.channel:
+            if command and channel and channel==config.channel and user!="U4P2K7U07":
                 handle_command(command, channel, user)
             time.sleep(READ_WEBSOCKET_DELAY)
     else:

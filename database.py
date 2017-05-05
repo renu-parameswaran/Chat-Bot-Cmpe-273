@@ -108,21 +108,33 @@ def checkIDExists(id,conn):
       log.writetofile("ID does not exist in DB")
       return False
 
-def checkRowExists(ques,ans,keywordList,conn):
-  cur = conn.cursor()
-  if not keywordList:
-      print "keyword list is empty or null"
-      return False
-  else:
-     #keywordListToCsv = ','.join(map(str, keywordList))
-    sql = "select * from responses where Question = '%s' and Answer = '%s' and Keywords = '%s'" % (ques,ans,keywordList)
-    rows_count = cur.execute(sql)
-    if rows_count > 0:
-     log.writetofile("Row exists in response table")
-     return True
+
+def checkRowExists(ques, ans, keywordList, conn):
+    cur = conn.cursor()
+    log.writetofile("..user input keywords" + " " + str(keywordList))
+
+    UserkeywordList = str(keywordList)
+
+    if not keywordList:
+        print "keyword list is empty or null"
+        return False
     else:
-      log.writetofile("Row does not exist in response table")
-      return False
+
+        sql = "select Keywords from responses where Question = '%s' and Answer = '%s'" % (ques, ans)
+        rows_count = cur.execute(sql)
+        result = cur.fetchall()
+        for i in result:
+            resultrow = i[0]
+
+        if rows_count > 0:
+            if (set(resultrow) == set(UserkeywordList)):
+                log.writetofile("Row exists in response table")
+                return True
+
+
+        else:
+            log.writetofile("Row does not exist in response table")
+            print "not exists"
 
 def getPastResponse(id,conn):
   cur = conn.cursor()
