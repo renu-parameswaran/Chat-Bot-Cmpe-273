@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 29, 2017 at 04:49 AM
+-- Generation Time: May 06, 2017 at 04:28 AM
 -- Server version: 10.1.21-MariaDB
 -- PHP Version: 5.6.30
 
@@ -33,25 +33,22 @@ CREATE TABLE `sentresponses` (
   `MatchingKeywords` varchar(2048) NOT NULL,
   `QuestionPart` varchar(2048) NOT NULL,
   `CurrentScore` int(100) NOT NULL,
-  `Timestamp` varchar(2048) NOT NULL
+  `Timestamp` varchar(2048) NOT NULL,
+  `image_url` varchar(2048) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Dumping data for table `sentresponses`
 --
 
-INSERT INTO `sentresponses` (`ID`, `UserQuestion`, `Answer`, `MatchingKeywords`, `QuestionPart`, `CurrentScore`, `Timestamp`) VALUES
-(1, 'where is the classroom for 273', 'Hello I am sara', 'is,classroom,273 ', 'where', 1, '2017-04-28 18:26:17.425000'),
-(2, 'who is the instructor for 273', 'Hello I am sara', 'is,instructor,273 ', 'who', 1, '2017-04-28 18:27:00.157000'),
-(3, 'who is the instructor for 273', 'Hello I am sara', 'is,instructor,273 ', 'who', 1, '2017-04-28 18:29:17.381000'),
-(4, 'who is the instructor for 273', 'Hello I am sara', 'is,instructor,273 ', 'who', 1, '2017-04-28 18:30:17.969000'),
-(5, 'who is the instructor for 273', 'Hello I am sara', 'is,instructor,273 ', 'who', 1, '2017-04-28 18:30:25.221000'),
-(6, 'who is the instructor for 273', 'Hello I am sara', 'is,instructor,273 ', 'who', 1, '2017-04-28 18:30:31.392000'),
-(7, 'who is the instructor for 273', 'Hello I am sara', 'is,instructor,273 ', 'who', 1, '2017-04-28 18:30:37.608000'),
-(8, 'who is the instructor for 273', 'Hello I am sara', 'is,instructor,273 ', 'who', 1, '2017-04-28 18:57:33.506000'),
-(9, 'where is 273', 'Hello I am sara', 'is,273 ', 'where', 1, '2017-04-28 18:57:50.308000'),
-(10, 'where is 273', 'Hello this is sara', 'is,273 ', 'where', 1, '2017-04-28 18:58:26.953000'),
-(11, 'who is 273', 'Hello this is sara', 'is,273 ', 'who', 1, '2017-04-28 19:19:00.967000');
+INSERT INTO `sentresponses` (`ID`, `UserQuestion`, `Answer`, `MatchingKeywords`, `QuestionPart`, `CurrentScore`, `Timestamp`, `image_url`) VALUES
+(1, 'who is the professor for cmpe 273', 'sithu aung', 'professor,cmpe,273 ', 'who', 0, '2017-05-05 08:05:39.252000', 'http://www.intuitlabs.com/wp-content/uploads/2014/12/saung_gif.jpg'),
+(2, 'where is cmpe 273 class?', 'sh100 ', 'cmpe,273,class? ', 'where', 1, '2017-05-05 08:07:16.022000', 'none'),
+(3, 'who is the instructor', 'sithu', 'instructor ', 'who', 0, '2017-05-05 18:14:44.677000', 'none'),
+(4, 'who is the ta', 'umang', 'ta ', 'who', 1, '2017-05-05 18:25:44.997000', 'none'),
+(5, 'who is the department chair', 'professor su', 'department,chair ', 'who', 1, '2017-05-05 18:26:48.425000', 'none'),
+(6, 'who is the department head', 'professor su', 'department,head ', 'who', 1, '2017-05-05 18:26:59', 'none'),
+(7, 'what is the name of department chair', 'professor su', 'name,department,chair ', 'what', -2, '2017-05-05 18:42:35.625000', 'none');
 
 --
 -- Indexes for dumped tables
@@ -71,7 +68,7 @@ ALTER TABLE `sentresponses`
 -- AUTO_INCREMENT for table `sentresponses`
 --
 ALTER TABLE `sentresponses`
-  MODIFY `ID` int(100) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `ID` int(100) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

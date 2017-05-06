@@ -42,13 +42,13 @@ def getAllResponses(conn):
     #log.writetofile(str(dblist))
     return dblist
 
-def storeSentResponse(userInput,answer,keywords,questions,conn):
+def storeSentResponse(userInput,answer,keywords,questions,conn,img_url):
     log.writetofile("storing sent response to DB..")
     now = datetime.now()
     now.strftime('%m/%d/%Y')
 
     cur = conn.cursor()
-    insertstmt = "insert into sentresponses (UserQuestion,Answer,MatchingKeywords,QuestionPart,CurrentScore,Timestamp) values ('%s', '%s', '%s ', '%s', '%d', '%s')" % (userInput,answer,','.join(keywords),questions,1,now)
+    insertstmt = "insert into sentresponses (UserQuestion,Answer,MatchingKeywords,QuestionPart,CurrentScore,Timestamp,image_url) values ('%s', '%s', '%s ', '%s', '%d', '%s', '%s')" % (userInput,answer,','.join(keywords),questions,1,now,img_url)
     cur.execute(insertstmt)
     log.writetofile("Insert to db successfully done")
     conn.commit()
@@ -61,8 +61,8 @@ def getAllPastResponses(questions,keywords,conn):
     result = cur.fetchall()
     dblist = []
     for row in result:
-     id,quest,ans,matchkeyw,QP,CS,TS = row
-     dblist.append({"id": "%d" % id, "user question": "%s" % quest, "Answer": "%s" % ans, "Matching Keywords": "%s" % matchkeyw,"Question Part": "%s" % QP, "Current Score": "%s" % CS, "Time Stamp": "%s" % TS})
+     id,quest,ans,matchkeyw,QP,CS,TS,img_url = row
+     dblist.append({"id": "%d" % id, "user question": "%s" % quest, "Answer": "%s" % ans, "Matching Keywords": "%s" % matchkeyw,"Question Part": "%s" % QP, "Current Score": "%s" % CS, "Time Stamp": "%s" % TS, "Image_Url": "%s" %img_url})
     log.writetofile(str(dblist))
     return dblist
 
@@ -72,6 +72,7 @@ def updatePastResponse(id, feedback,conn):
   now = datetime.now()
   now.strftime('%m/%d/%Y')
   if(feedback == 'y' or feedback == 'yes'):
+    print id
     sql = "update sentresponses set CurrentScore = CurrentScore + 1, Timestamp = '%s' where ID = '%d'" % (now,id)
     cur.execute(sql)
     log.writetofile("CurrentScore incremented in db")
@@ -91,8 +92,9 @@ def storeNewResponse(ans,matchedKeywordList,ques,conn):
      cur = conn.cursor()
      #decodedKeyword = (unicode.encode(matchedKeywordList))
      #decodedQuestion = ((unicode.encode(ques)))
-     insertStmt = "insert into responses (Answer,Keywords,Question,image_url)* values ('%s','%s','%s','none')" % (ans,matchedKeywordList,ques)
-     #print insertStmt
+     insertStmt = "insert into responses (Answer,Keywords,Question,image_url) values ('%s','%s','%s','none')" % (ans,matchedKeywordList,ques)
+
+     print insertStmt
      cur.execute(insertStmt)
      log.writetofile("New Responses inserted to db")
      conn.commit()
@@ -130,11 +132,14 @@ def checkRowExists(ques, ans, keywordList, conn):
             if (set(resultrow) == set(UserkeywordList)):
                 log.writetofile("Row exists in response table")
                 return True
+            else:
+				return False
 
 
         else:
             log.writetofile("Row does not exist in response table")
-            print "not exists"
+            log.writetofile("not exists")
+            return False
 
 def getPastResponse(id,conn):
   cur = conn.cursor()
@@ -144,20 +149,22 @@ def getPastResponse(id,conn):
   result = cur.fetchall()
   for row in result:
      dblist.append({"ID": "%d" % row[0], "UserQuestion": "%s" % row[1], "Answer": "%s" % row[2], "MatchingKeywords": "%s" % row[3],
-                 "QuestionPart": "%s" % row[4], "CurrentScore": "%d" % row[5], "Timestamp": "%s" % row[6]})
+                 "QuestionPart": "%s" % row[4], "CurrentScore": "%d" % row[5], "Timestamp": "%s" % row[6],"Image_Url":"%s" %row[7]})
      log.writetofile(str(dblist))
      return dblist
  
 def getPastResponseFromUserInput(userInp,conn):
 
     cur = conn.cursor()
-    sql = "select UserQuestion from sentresponses where UserQuestion = '%s'" % userInp
+    sql = "select * from sentresponses where UserQuestion = '%s'" % userInp
     dblist = []
     cur.execute(sql)
     result = cur.fetchall()
+    rowExists = False
     for row in result:
         dblist.append({"ID": "%d" % row[0], "UserQuestion": "%s" % row[1], "Answer": "%s" % row[2],
                        "MatchingKeywords": "%s" % row[3],
                        "QuestionPart": "%s" % row[4], "CurrentScore": "%d" % row[5], "Timestamp": "%s" % row[6]})
+        rowExists = True
         log.writetofile(str(dblist))
-        return dblist
+    return dblist[0],rowExists
