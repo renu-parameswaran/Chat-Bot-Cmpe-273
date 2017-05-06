@@ -16,7 +16,7 @@ def split_message(userInput):
   userInputListWithAlphaNumeric = []
   for str in userInputList:
       userInputListWithAlphaNumeric.append(re.sub(r'\W+', '', str))
-  #log.writetofile("UserInput list having only alphanumeric strings" + userInputListWithAlphaNumeric)
+  #log.writetofile("UserInput list having only alphanumeric strings" + str(userInputListWithAlphaNumeric))
   return userInputListWithAlphaNumeric
 
 def seperateQuestionAndKeywords(input):
@@ -62,3 +62,13 @@ def getSynonyms(word):
     #print (dictionary.synonym(word))
 
     return synonyms
+
+def generateResponse(userInputArray, ques, response):
+   if not ((response == config.dbConnectionError) or (response == config.twoQuestionsError) or
+         (response == config.noAppropriateResponseFound) or (response == config.ambiguousInput)):
+       if ques in userInputArray:
+           item = userInputArray.index(ques)
+           userInputArray[item] = response
+
+       userInputArray = [str(r) for r in userInputArray]
+       return ' '.join(userInputArray)
