@@ -32,6 +32,17 @@ def send_message(channel_id, message):
         icon_emoji=':robot_face:'
     )
 
+def send_image(channel_id,attachments):
+    log.writetofile("posting response image to channel: "+channel_id)
+    slack_client.api_call(
+        "chat.postMessage",
+        channel=channel_id,
+        text="",
+        attachments =attachments,
+        as_user=True,
+        icon_emoji=':robot_face:'
+    )
+
 def handle_command(userInput, channel, user):
     """
         Receives commands directed at the bot and determines if they
@@ -40,10 +51,17 @@ def handle_command(userInput, channel, user):
     """
     log.writetofile("entering handle command function")
     log.writetofile("User Input: " + userInput)
-    response = botController.currentWorkingMode(userInput)
+    response,image_url = botController.currentWorkingMode(userInput)
+    print response
     log.writetofile("bot reply: " + response)
     user = '<@{user}>'.format(user=user)
     send_message(channel,"Hi" + user + "!. "+response)
+    if (image_url!="none"):
+        attachments = [{"title":response,"image_url": image_url}]
+        send_image(channel,attachments)
+        log.writetofile("Sending Image")
+    else:
+        log.writetofile("No Image to be sent")
 
 def parse_slack_output(slack_rtm_output):
     """
