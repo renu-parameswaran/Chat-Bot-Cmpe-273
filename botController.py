@@ -39,6 +39,7 @@ def handle_request(questions, keywords, userInput, userInputArray, conn):
 
         if (conn != "error"):
             response,image_url = pickBestResponse(keywords,userInput,userInputArray,questions[0],conn)
+            response = lang_processor.generateResponse(userInputArray, questions[0], response)
 
         else:
             response = config.dbConnectionError
