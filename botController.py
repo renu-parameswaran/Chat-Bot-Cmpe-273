@@ -25,19 +25,20 @@ def getReply(userInput):
     userInputArray = lang_processor.split_message(userInput)
     questions, keywords = userInputQuestionKeyword(userInput)
 
-    response = handle_request(questions, keywords, userInput, userInputArray, conn)
+    response,image_url = handle_request(questions, keywords, userInput,userInputArray, conn)
 
-    return response
+    return response,image_url
 
 
 def handle_request(questions, keywords, userInput, userInputArray, conn):
     count = len(questions)
+    image_url = "none"
     if (count == 0):
         response = common_replies(userInput)
     elif (count == 1):
 
         if (conn != "error"):
-            response = pickBestResponse(keywords, userInput, userInputArray, questions[0], conn)
+            response,image_url = pickBestResponse(keywords,userInput,userInputArray,questions[0],conn)
 
         else:
             response = config.dbConnectionError
@@ -45,10 +46,11 @@ def handle_request(questions, keywords, userInput, userInputArray, conn):
     else:
         response = config.twoQuestionsError
 
-    return response
+    return response,image_url
 
 
-def pickBestResponse(keywords, userInput, userInputArray, questionPartInUserInput, conn):
+def pickBestResponse(keywords,userInput,userInputArray,questionPartInUserInput,conn):
+    image_url = "none"
     DBResponses = database.getAllResponses(conn)
     DBResponses = getMatchingKeywords(DBResponses, keywords)
     DBResponses.sort(key=operator.itemgetter('numberOfMatchingKeywords'), reverse=True)
@@ -58,10 +60,11 @@ def pickBestResponse(keywords, userInput, userInputArray, questionPartInUserInpu
         # 100% match for the keywords in user input with db keywords. Return this response
         if dbResponse['nonMatchingKeyWords'] == "" and dbResponse['nonMatchingKeywordsInDB'] == "":
             log.writetofile("100% match found")
-            database.storeSentResponse(userInput, dbResponse['answer'], keywords, questionPartInUserInput, conn)
-            return dbResponse['answer']
-        # not 100%.
-        # perform spell check and find similar words
+            image_url = dbResponse["image_url"]
+            database.storeSentResponse(userInput, dbResponse['answer'], keywords, questionPartInUserInput, conn, image_url)
+            return dbResponse['answer'],image_url
+        #not 100%.
+        #perform spell check and find similar words
         else:
             if (dbResponse["numberOfMatchingKeywords"] >= 1):
                 nonMatchingKeywords = dbResponse['nonMatchingKeyWords'].split(',')
@@ -90,35 +93,39 @@ def pickBestResponse(keywords, userInput, userInputArray, questionPartInUserInpu
     responseNumber = 1
     for dbResponse in DBResponses:
 
-        if responseNumber == 1:
-            firstResponseMatchingCount = dbResponse["numberOfMatchingKeywords"]
-            response = dbResponse["answer"]
-            responseNumber = responseNumber + 1
-            questionPart = dbResponse["question"]
-        else:
-            if (firstResponseMatchingCount != 0):
-                if firstResponseMatchingCount == dbResponse["numberOfMatchingKeywords"]:
-                    if questionPart == questionPartInUserInput:
-                        log.writetofile("2 best responses.picking first based on question")
-                    elif questionPartInUserInput == dbResponse["question"]:
-                        response = dbResponse["answer"]
-                        log.writetofile("2 best responses.picking 2nd based on question")
-                    else:
-                        log.writetofile("2 best responses and I cant pick which one is best")
-                        isAmbiguousReply = True
-                        response = config.ambiguousInput
+            if responseNumber == 1:
+                firstResponseMatchingCount = dbResponse["numberOfMatchingKeywords"]
+                response = dbResponse["answer"]
+                responseNumber = responseNumber+1
+                questionPart = dbResponse["question"]
+                image_url = dbResponse["image_url"]
             else:
-                log.writetofile("0 matching keywords")
-                isAmbiguousReply = True
-                response = config.ambiguousInput
+                if(firstResponseMatchingCount != 0):
+                    if firstResponseMatchingCount == dbResponse["numberOfMatchingKeywords"]:
+                        if questionPart == questionPartInUserInput:
+                            log.writetofile("2 responses.picking bases on question")
+                        elif questionPartInUserInput == dbResponse["question"]:
+                            response = dbResponse["answer"]
+                            image_url = dbResponse["image_url"]
+                            log.writetofile("2 responses.picking 2nd based on question")
+                        else:
+                            log.writetofile("2 responses.ambiguos")
+                            isAmbiguousReply = True
+                            image_url = dbResponse["image_url"]
+                            response = config.ambiguousInput
+                else:
+                    log.writetofile("0 matching keywords")
+                    isAmbiguousReply = True
+                    image_url = dbResponse["image_url"]
+                    response = config.ambiguousInput
 
-            if (isAmbiguousReply):
-                log.writetofile("not storing in sent responses")
-            else:
-                database.storeSentResponse(userInput, response, keywords, questionPartInUserInput, conn)
-                log.writetofile("storing sent response")
+                if(isAmbiguousReply):
+                    log.writetofile("not storing in sent responses")
+                else:
+                    database.storeSentResponse(userInput, response, keywords, questionPartInUserInput, conn,image_url)
+                    log.writetofile("storing sent response")
 
-            return response
+                return response,image_url
 
     # pastResponses = database.getPastResponseFromUserInput(userInput,conn)
     return config.noAppropriateResponseFound
@@ -205,6 +212,7 @@ def getMatchingKeywords(allResponses, keywords):
 
 # Function to get the Current Mode
 def currentWorkingMode(userInput):
+    image_url = "none"
     global currentMode
     if (currentMode == "default"):
         if (userInput == "1"):
@@ -232,18 +240,18 @@ def currentWorkingMode(userInput):
         if (userInput.lower() == "Exit".lower()):
             response = defaultMode()
         else:
-            response = getReply(userInput)
+            response,image_url= getReply(userInput)
             log.writetofile("Calling function botController getReply")
 
     elif (currentMode == "training"):
         if (userInput.lower() == "Exit".lower()):
             response = defaultMode()
         else:
-            global userInputQuestions, userInputKeywords
-            userInputQuestions, userInputKeywords = userInputQuestionKeyword(userInput)
-            print type(userInputQuestions)
-            print userInputQuestions
-            if (len(userInputQuestions)):
+            global userInputQuestions,userInputKeywords
+            userInputQuestions,userInputKeywords = userInputQuestionKeyword(userInput)
+            #print type(userInputQuestions)
+            #print userInputQuestions
+            if(len(userInputQuestions)):
                 currentMode = "training2"
                 response = config.trainingResponse2
     elif (currentMode == "training2"):
@@ -285,8 +293,8 @@ def currentWorkingMode(userInput):
             global responseID
             conn = database.connectToDB()
             id = int((unicode.encode(responseID)))
-            database.updatePastResponse(id, userInput, conn)
-            if (userInput.lower() == "yes".lower() or userInput.lower() == "y"):
+            database.updatePastResponse(id,userInput,conn)
+            if(userInput.lower()=="yes".lower() or userInput.lower()=="y"):
                 response = config.feedbackResponseYes
                 currentMode = "morefeedback"
             if (userInput.lower() == "no".lower() or userInput.lower() == "n"):
@@ -308,9 +316,16 @@ def currentWorkingMode(userInput):
             id = int((unicode.encode(responseID)))
             conn = database.connectToDB()
             dblist = database.getPastResponse(id, conn)
+
             for var1 in dblist:
-                var1['Answer'] = userInput
-                database.storeNewResponse(var1['Answer'], var1['MatchingKeywords'], var1['QuestionPart'], conn)
+                if (database.checkRowExists(var1['QuestionPart'], userInput, var1['MatchingKeywords'], conn)):
+                    log.writetofile("row already exist so not inserting")
+
+
+                else:
+                    log.writetofile("new row inserted")
+                    database.storeNewResponse(userInput, var1['MatchingKeywords'], var1['QuestionPart'], conn)
+
             response = config.feedbackResponseYes
             currentMode = "morefeedback"
 
@@ -319,8 +334,8 @@ def currentWorkingMode(userInput):
             response = defaultMode()
         else:
             response = "Call Statistics Function"
-
-    return response
+        
+    return response,image_url
 
 
 # Function for default mode when userinput==0
@@ -333,9 +348,9 @@ def defaultMode():
 
 def getMessage():
     currentTime = int(time.strftime('%H:%M').split(':')[0])
-    if currentTime >= 6 and currentTime <= 13:
-        response = "Hello!" + " " + "Good morning!"
-    elif currentTime >= 13 and currentTime <= 18:
+    if currentTime >= 6 and currentTime <= 12:
+        response = "Hello!"+" "+ "Good morning!"
+    elif currentTime >= 12 and currentTime <= 18:
         response = "Hello" + " " + "Good afternoon!"
     elif currentTime >= 18 and currentTime <= 22:
         response = "Hello" + " " + "Good evening!"
