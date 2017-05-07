@@ -187,3 +187,46 @@ def getPastResponseFromUserInput(userInp,conn):
         rowExists = True
         log.writetofile(str(dblist))
     return dblist,rowExists
+
+def isCorrectAnswer(keywords,conn):
+    log.writetofile("sending query to responses db")
+    cur = conn.cursor()
+    userkeylist = []
+    for i in keywords:
+     userkeylist.append(i)
+    log.writetofile(str(userkeylist))
+    sql = "select Keywords from responses"
+    cur.execute(sql)
+    result = cur.fetchall()
+    resultrow = []
+    for i in result:
+     resultrow.append(i[0])
+    resultlist = ','.join(resultrow)
+    a = resultlist.split(",")
+    newwordslist = [x for x in userkeylist if x not in a]
+
+    answer = newwordslist[0:]
+
+    userinputlist = [x for x in userkeylist if x not in newwordslist]
+    for i in userinputlist:
+        listuser = ','.join(userinputlist)
+
+    sql = "select Keywords from responses where Answer = '%s'" % (' '.join(answer))
+    rows_count = cur.execute(sql)
+    log.writetofile(sql)
+
+
+    if rows_count > 0:
+      result = cur.fetchall()
+      dblist = result[0]
+      log.writetofile(str(dblist))
+
+      if (set(listuser) == set(dblist[0])):
+        log.writetofile("Row exists in response table")
+        return True
+      else:
+        log.writetofile("no matching found")
+        return False
+
+    else:
+      return False
