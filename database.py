@@ -42,6 +42,24 @@ def getAllResponses(conn):
     #log.writetofile(str(dblist))
     return dblist
 
+def getAllResponsesExceptAnswerWithNegativeScore(conn,previousAnswer):
+    log.writetofile("Getting responses without answer with negative score")
+    cur = conn.cursor()
+    sql = "SELECT * FROM responses where Answer!='%s'" % previousAnswer
+    cur.execute(sql)
+    result = cur.fetchall()
+    dblist = []
+    for row in result:
+        id, ans, keyw, ques, img_url = row
+        numberOfDbKeywords = len(keyw.split(','))
+        dblist.append({"id": "%d" % id, "question": "%s" % ques.lower(), "answer": "%s" % ans.lower(),
+                       "numberOfDbKeywords": "%d" % numberOfDbKeywords, "DbKeywords": "%s" % keyw.lower(),
+                       "numberOfUserInputKeywords": 0, "numberOfMatchingKeywords": 0, "matchingKeyWords": "",
+                       "nonMatchingKeyWords": "", "image_url": img_url, "nonMatchingKeywordsInDB": ""})
+    # log.writetofile(str(dblist))
+    return dblist
+
+
 def storeSentResponse(userInput,answer,keywords,questions,conn,img_url):
     log.writetofile("storing sent response to DB..")
     now = datetime.now()
@@ -164,7 +182,8 @@ def getPastResponseFromUserInput(userInp,conn):
     for row in result:
         dblist.append({"ID": "%d" % row[0], "UserQuestion": "%s" % row[1], "Answer": "%s" % row[2],
                        "MatchingKeywords": "%s" % row[3],
-                       "QuestionPart": "%s" % row[4], "CurrentScore": "%d" % row[5], "Timestamp": "%s" % row[6]})
+                       "QuestionPart": "%s" % row[4], "CurrentScore": "%d" % row[5], "Timestamp": "%s" % row[6],"Image_Url":"%s" %row[7]})
+
         rowExists = True
         log.writetofile(str(dblist))
-    return dblist[0],rowExists
+    return dblist,rowExists

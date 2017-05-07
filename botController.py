@@ -4,6 +4,7 @@ import log
 import config
 import operator
 import time
+#import weather
 
 currentMode = "default"
 userInputQuestions = []
@@ -50,15 +51,42 @@ def handle_request(questions, keywords, userInput, userInputArray, conn):
     return response,image_url
 
 
-def pickBestResponse(keywords,userInput,userInputArray,questionPartInUserInput,conn):
+def pickBestResponse(keywords, userInput, userInputArray, questionPartInUserInput, conn):
     image_url = "none"
-    DBResponses = database.getAllResponses(conn)
+    pastResponses,isPastResponseExists =  database.getPastResponseFromUserInput(userInput,conn)
+
+    if isPastResponseExists:
+        pastResponses.sort(key=operator.itemgetter('CurrentScore'), reverse=True)
+        pastResponse = pastResponses[0]
+        print pastResponse['CurrentScore']
+        if int(pastResponse['CurrentScore'])>0:
+            log.writetofile("I am giving a reply from my past experiences")
+            response = pastResponse['Answer']
+            image_url = pastResponse['Image_Url']
+        else:
+            log.writetofile("Score for my past experiences does not look good. I am gonna look for new responses in the DB")
+            response,image_url = getBestResponseFromDB(keywords, userInput, userInputArray, questionPartInUserInput, conn,True,pastResponse['Answer'])
+    else:
+        log.writetofile("Getting new response from DB")
+        response,image_url = getBestResponseFromDB(keywords, userInput, userInputArray, questionPartInUserInput, conn,False,"none")
+
+    return response,image_url
+
+
+
+def getBestResponseFromDB(keywords,userInput,userInputArray,questionPartInUserInput,conn,isNegativeScore,previousAnswer):
+    image_url = "none"
+    if isNegativeScore:
+        DBResponses = database.getAllResponsesExceptAnswerWithNegativeScore(conn,previousAnswer)
+    else:
+        DBResponses = database.getAllResponses(conn)
     DBResponses = getMatchingKeywords(DBResponses, keywords)
     DBResponses.sort(key=operator.itemgetter('numberOfMatchingKeywords'), reverse=True)
     log.writetofile("sorted:" + str(DBResponses))
 
     for dbResponse in DBResponses:
         # 100% match for the keywords in user input with db keywords. Return this response
+        #to do: two questions with 100% match?? match question!!
         if dbResponse['nonMatchingKeyWords'] == "" and dbResponse['nonMatchingKeywordsInDB'] == "":
             log.writetofile("100% match found")
             image_url = dbResponse["image_url"]
@@ -76,11 +104,11 @@ def pickBestResponse(keywords,userInput,userInputArray,questionPartInUserInput,c
                     if (correctedKeyword != nonMatchingKeyword):
                         log.writetofile("spelling corrected:" + correctedKeyword)
                     synonyms = lang_processor.getSynonyms(correctedKeyword)
-                    log.writetofile("synonyms for user input " + correctedKeyword + ":" + str(synonyms))
+                    #log.writetofile("synonyms for user input " + correctedKeyword + ":" + str(synonyms))
 
                     for nonMatchingKeyword in nonMatchingKeywordsinDB:
                         DBsynonyms = lang_processor.getSynonyms(nonMatchingKeyword)
-                        log.writetofile("synonyms for DB " + nonMatchingKeyword + ":" + str(DBsynonyms))
+                        #log.writetofile("synonyms for DB " + nonMatchingKeyword + ":" + str(DBsynonyms))
 
                         if (set(DBsynonyms) == set(synonyms)):
                             log.writetofile("matching synonym found.")
@@ -232,6 +260,10 @@ def currentWorkingMode(userInput):
             currentMode = "statistics"
             response = config.statisticsResponse
             log.writetofile(response)
+        elif (userInput == "5"):
+            currentMode = "weather"
+            response = config.weatherResponse
+            log.writetofile(response)
         elif (userInput.lower() == "Exit".lower()):
             response = defaultMode()
         else:
@@ -329,6 +361,13 @@ def currentWorkingMode(userInput):
 
             response = config.feedbackResponseYes
             currentMode = "morefeedback"
+    elif (currentMode=="weather"):
+        if (userInput.lower() == "Exit".lower()):
+            response = defaultMode()
+        else:
+            questions,keywords = userInputQuestionKeyword(userInput)
+            #response = weather.getWeather(keywords)
+            response = "weather mode initiated"
 
     else:
         if (userInput.lower() == "Exit".lower()):
