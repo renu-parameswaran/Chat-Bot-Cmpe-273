@@ -4,6 +4,7 @@ import log
 import config
 import operator
 import time
+import sendemail
 #import weather
 
 currentMode = "default"
@@ -35,7 +36,7 @@ def handle_request(questions, keywords, userInput, userInputArray, conn):
     count = len(questions)
     image_url = "none"
     if (count == 0):
-        response = common_replies(userInput)
+        response = common_replies(userInputArray)
     elif (count == 1):
 
         if (conn != "error"):
@@ -160,28 +161,53 @@ def getBestResponseFromDB(keywords,userInput,userInputArray,questionPartInUserIn
     return config.noAppropriateResponseFound
 
 
-def common_replies(user_input):
-    for i in user_input:
-        if i in ("hi sara"):
-            response = "Hi! Welcome"
-        elif i in ("hello sara"):
-            response = "Hi..whatsup!?"
-        elif i in ("sara, i need some help "):
-            resposne = "What help do u need"
-        elif i in ("thank you so much for the answers"):
-            response = "You are welcome!"
-        elif i in ("thanks Sara"):
-            response = "Welcome Sara"
-        elif i in ("Its a great day"):
-            response = "Yes, A Wonderful Day."
-        elif i in ("Can you improve your answers?"):
-            response = "Yes..sure"
-        elif i in ("How are you today?"):
-            response = "Im good, thanks! "
-        elif i in ("this is an amazing answer!"):
-            response = "I know it is! "
+def common_replies(user_input_array):
+    conn = database.connectToDB()
+    question1 = user_input_array[0]
+    print question1
+    for i in user_input_array:
+        ques = ' '.join(user_input_array)
+    if (question1 == "is"):
+        keywords = lang_processor.removeUnwantedWords(user_input_array)
+        resp = database.isCorrectAnswer(keywords, conn)
+        if (resp == True):
+            response = "yes"
         else:
-            response = "Sorry! Cannot Handle"
+            response = "no"
+    elif (ques in "book appointment"):
+         response = sendemail.SendEmail()
+
+    elif (ques in "Hi"):
+         response = "Hey"
+
+    elif (ques in "hello sara"):
+         response = "Hello whatsup!?"
+
+    elif (ques in "help"):
+         resposne = "Sure, What help do u need?"
+
+    elif (ques in "thank you thanks"):
+         response = "You are welcome!"
+
+    elif (ques in "nice awesome wonderful"):
+        response = "Thank you :)"
+
+    elif (ques in "great day"):
+        response = "Yes,Thanks. Wish you a Wonderful Day."
+
+    elif (ques in "improve"):
+        response = "Yes..sure, I will definitely improve them."
+
+    elif (ques in "amazing answers!"):
+        response = "Thanks! I know they are."
+
+    elif (ques in "bye!"):
+        response = "Bye! Have a good day! "
+
+    else:
+        response = "Sorry! Cannot Handle"
+
+
     return response
 
 
