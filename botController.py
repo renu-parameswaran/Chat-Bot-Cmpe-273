@@ -6,6 +6,11 @@ import operator
 import time
 import sendemail
 #import weather
+from textblob import TextBlob
+from textblob.classifiers import NaiveBayesClassifier
+import random
+import sara
+
 
 currentMode = "default"
 userInputQuestions = []
@@ -41,8 +46,9 @@ def handle_request(questions, keywords, userInput, userInputArray, conn):
 
         if (conn != "error"):
             response,image_url = pickBestResponse(keywords,userInput,userInputArray,questions[0],conn)
+            print response
             response = lang_processor.generateResponse(userInputArray, questions[0], response)
-
+            print response
         else:
             response = config.dbConnectionError
 
@@ -143,11 +149,14 @@ def getBestResponseFromDB(keywords,userInput,userInputArray,questionPartInUserIn
                             isAmbiguousReply = True
                             image_url = dbResponse["image_url"]
                             response = config.ambiguousInput
+
                 else:
                     log.writetofile("0 matching keywords")
                     isAmbiguousReply = True
-                    image_url = dbResponse["image_url"]
                     response = config.ambiguousInput
+                    image_url = dbResponse["image_url"]
+                    print response
+                    print config.ambiguousInput
 
                 if(isAmbiguousReply):
                     log.writetofile("not storing in sent responses")
@@ -161,54 +170,138 @@ def getBestResponseFromDB(keywords,userInput,userInputArray,questionPartInUserIn
     return config.noAppropriateResponseFound
 
 
+def check_for_greeting(input1):
+ GREETING_RESPONSES = ["Hi!,what's up with you?","'sup bro :wink:", "hey :smiley:","hi..Welcome :smiley:", "How can i help you?","Sure, What help do u need?", "I'm bored! Give me good questions! :sob:"]
+ response = random.choice(GREETING_RESPONSES)
+ return response
+
+def check_for_complaints(input2):
+ SORRY_RESPONSES = ["sorry :neutral_face:", "I will try to improve my answers :ok_hand:","i'm really sorry :sob:","I apologize for being late to reply :pray:"]
+ response = random.choice(SORRY_RESPONSES)
+ return response
+
 def common_replies(user_input_array):
+
     conn = database.connectToDB()
     question1 = user_input_array[0]
-    print question1
+
+    train = [
+        ('hi', 'pos'),
+        ('hello', 'pos'),
+        ('please improve your answers', 'pos'),
+        ('can you give me this?', 'pos'),
+        ('i love your answers.', 'pos'),
+        ('this is an amazing answer!', 'pos'),
+        ('a very Good Morning', 'pos'),
+        ('this is your best work.', 'pos'),
+        ("this is an awesome answer", 'pos'),
+        ('i do not like this', 'neg'),
+        ('sorry', 'neg'),
+        ('i am tired of this stuff.', 'neg'),
+        ("i can't deal with this", 'neg'),
+        ('you have to improve', 'neg'),
+        ('you are taking so much time to learn.', 'neg')
+    ]
+    cl = NaiveBayesClassifier(train)
+
+
     for i in user_input_array:
         ques = ' '.join(user_input_array)
-    if (question1 == "is"):
-        keywords = lang_processor.removeUnwantedWords(user_input_array)
-        resp = database.isCorrectAnswer(keywords, conn)
-        if (resp == True):
-            response = "yes"
+    blob = TextBlob(ques, classifier=cl)
+    sentiment = blob.classify()
+    print (sentiment)
+    log.writetofile("entering positive or negative checking")
+    common_questions = ['request appointment','sjsu main campus map','share cmpe273 greensheet','slack manual assistance error problem','help','improve','great day','bye tata cya see you later','thank you thanks','thanks Sara','please improve your answers','are you feeling good today?','amazing answers','bye']
+    for i in common_questions:
+        if (sentiment == 'pos' and question1 != "is" and (ques not in ' '.join(common_questions))):
+            response = check_for_greeting(ques)
+
+        elif (sentiment == 'neg' and question1 != "is" and (ques not in ' '.join(common_questions))):
+            response = check_for_complaints(ques)
+
+        elif (question1 == "is"):
+            keywords = lang_processor.removeUnwantedWords(user_input_array)
+            resp = database.isCorrectAnswer(keywords, conn)
+            if (resp == True):
+                response = "yes"
+            else:
+                response = "no"
+        elif (ques in "request appointment"):
+            response = sendemail.SendEmail()
+
+        elif (ques in "share cmpe273 greensheet"):
+            attachments = [
+                {
+                    "fallback": "Greensheet Cmpe 273 spring 2017 semester - https://www.dropbox.com/sh/qrzvf659cw2k4uv/AACrelHpOwJTX88TDN-PQ8o9a?dl=0&preview=cmpe273-greensheet.docx",
+                    "pretext": "Cmpe 273 Greensheet",
+                    "title": "Cmpe 273 Spring 2017 Semester Greensheet",
+                    "title_link": "https://www.dropbox.com/sh/qrzvf659cw2k4uv/AACrelHpOwJTX88TDN-PQ8o9a?dl=0&preview=cmpe273-greensheet.docx",
+                    "color": "#36a64f",
+                }
+            ]
+
+            response = "click on this link for greensheet"
+            sara.send_image(config.channel,attachments)
+
+        elif (ques in "thank you thanks"):
+            response = "You are welcome! :thumbsup:"
+    
+        elif (ques in "sjsu main campus map"):
+            attachments = [
+            {
+
+                "title": "Sjsu Main Campus",
+                "title_link": "http://www.sjsu.edu/map/docs/campus-map.pdf",
+                "color": "#36a64f"
+            }
+            ]
+            response = "Check out this link for main campus map!"
+            sara.send_image(config.channel, attachments)
+
+
+        elif (ques in "more clear"):
+            response = "sure :ok_hand:"
+
+        elif (ques in "great day"):
+            response = "Yes,Thanks. Wish you a Wonderful Day. :ok_hand:"
+
+        elif (ques in "please improve your answers"):
+            response = "Yes..sure, I will definitely improve them. :ok_hand:"
+
+        elif (ques in "are you feeling good today?"):
+            response = "Hi! I'm good..How are you feeling this week?"
+
+        elif (ques in "amazing answers"):
+            response = "Thanks! I know im so good at it!. :heart_eyes:"
+
+        elif (ques in "bye tata cya see you later"):
+            response = "Bye! Adios! Have a good day! :wave: "
+
+        elif (ques in "help :rolling_eyes:"):
+            response = "Sure! What help do u need? "
+
+        elif (ques in "slack manual assistance error problem"):
+            attachments = [
+                {
+                    "fallback": "help with slack - https://get.slack.help/hc/en-us",
+                    "pretext": "Slack help center",
+                    "title": "Hi, How can we help?",
+                    "title_link": "https://get.slack.help/hc/en-us",
+                    "color": "#36a64f"
+                }
+            ]
+            response = "Check out this link for help center!"
+            sara.send_image(config.channel, attachments)
+
+
+        elif (ques in "improve"):
+            response = "Yes..sure, I will definitely improve them.:thumbsup: "
+
         else:
-            response = "no"
-    elif (ques in "book appointment"):
-         response = sendemail.SendEmail()
+            response = "I'm sorry, I don't understand! Sometimes I have an easier time with a few simple keywords.\n "
 
-    elif (ques in "Hi"):
-         response = "Hey"
+        return response
 
-    elif (ques in "hello sara"):
-         response = "Hello whatsup!?"
-
-    elif (ques in "help"):
-         resposne = "Sure, What help do u need?"
-
-    elif (ques in "thank you thanks"):
-         response = "You are welcome!"
-
-    elif (ques in "nice awesome wonderful"):
-        response = "Thank you :)"
-
-    elif (ques in "great day"):
-        response = "Yes,Thanks. Wish you a Wonderful Day."
-
-    elif (ques in "improve"):
-        response = "Yes..sure, I will definitely improve them."
-
-    elif (ques in "amazing answers!"):
-        response = "Thanks! I know they are."
-
-    elif (ques in "bye!"):
-        response = "Bye! Have a good day! "
-
-    else:
-        response = "Sorry! Cannot Handle"
-
-
-    return response
 
 
 # Function to get matching Keywords
