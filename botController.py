@@ -186,7 +186,8 @@ def check_for_complaints(input2):
     return response
 
 
-def common_replies(user_input_array, conn):
+def common_replies(user_input_array):
+    conn = database.connectToDB()
     question1 = user_input_array[0]
 
     train = [
@@ -214,10 +215,10 @@ def common_replies(user_input_array, conn):
     sentiment = blob.classify()
     print (sentiment)
     log.writetofile("entering positive or negative checking")
-    common_questions = ['request appointment', 'sjsu main campus map', 'share cmpe273 greensheet',
-                        'slack manual assistance error problem', 'help', 'improve', 'great day',
-                        'bye tata cya see you later', 'thank you thanks', 'thanks Sara', 'please improve your answers',
-                        'are you feeling good today?', 'amazing answers', 'bye']
+    common_questions = ['request appointment', 'text books references download', 'sjsu main campus map',
+                        'share cmpe273 greensheet', 'slack manual assistance error problem', 'help', 'improve',
+                        'great day', 'bye tata cya see you later', 'thank you thanks', 'thanks Sara',
+                        'please improve your answers', 'are you feeling good today?', 'amazing answers', 'bye']
     for i in common_questions:
         if (sentiment == 'pos' and question1 != "is" and (ques not in ' '.join(common_questions))):
             response = check_for_greeting(ques)
@@ -268,6 +269,38 @@ def common_replies(user_input_array, conn):
         elif (ques in "more clear"):
             response = "sure :ok_hand:"
 
+        elif (ques in "text books references download"):
+            response = "Check these links to download text books! :thumbsup:"
+
+            attachments = [
+                {
+                    "text": "Text Books/Readings -",
+                    "fallback": "text book 1 - https://books.google.com/books?id=CclkovBDqJkC&printsec=frontcover&source=gbs_ge_summary_r&cad=0#v=onepage&q&f=false",
+                    "fields": [
+                        {
+
+                            "title": "Web Services, by Gustavo Alonso, Fabio Casati, Harumi Kuno and Vijay Machiraju (2003) ",
+                            "value": "<https://books.google.com/books?id=CclkovBDqJkC&printsec=frontcover&source=gbs_ge_summary_r&cad=0#v=onepage&q&f=false|Download here>",
+                            "short": True
+                        },
+                        {
+                            "title": "Enterprise Integration Patterns, by Gregor Hohpe and Bobby Woolf (2003)",
+                            "value": "<http://ptgmedia.pearsoncmg.com/images/9780321200686/samplepages/0321200683.pdf|Download here>",
+                            "short": True
+                        },
+                        {
+                            "title": "Restful Web Services, by Leonard Richardson, Sam Ruby and David Hansson (2007)",
+                            "value": "<https://www.crummy.com/writing/RESTful-Web-Services/RESTful_Web_Services.pdf|Download here>",
+                            "short": True
+                        }
+                    ],
+                    "color": "#F35A00"
+                }
+            ]
+
+            sara.send_image(config.channel, attachments)
+
+
         elif (ques in "great day"):
             response = "Yes,Thanks. Wish you a Wonderful Day. :ok_hand:"
 
@@ -307,7 +340,6 @@ def common_replies(user_input_array, conn):
             response = "I'm sorry, I don't understand! Sometimes I have an easier time with a few simple keywords.\n "
 
         return response
-
 
 # Function to get matching Keywords
 def getMatchingKeywords(allResponses, keywords):
