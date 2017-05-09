@@ -5,7 +5,7 @@ import config
 import operator
 import time
 import sendemail
-# import weather
+import weather
 from textblob import TextBlob
 from textblob.classifiers import NaiveBayesClassifier
 import random
@@ -38,7 +38,7 @@ def getReply(userInput):
         questionPart = "none"
     else:
         questionPart = questions[0]
-        
+
     return response, image_url, questionPart
 
 
@@ -422,16 +422,29 @@ def currentWorkingMode(userInput):
             unicodeKeywords = ','.join(userInputKeywords)
             if (database.checkRowExists(userInputQuestions[0], userInput, unicodeKeywords, conn)):
                 log.writetofile("row already exist so not inserting")
-                currentMode = "training"
+                response = "Thanks for the information. " + config.moreTraining
+                currentMode = "moretraining"
             else:
                 database.storeNewResponse(userInput, unicodeKeywords, userInputQuestions[0], conn)
-                currentMode = "training"
-            response = "Thanks for the information. " + config.trainingResponse1
+                currentMode = "moretraining"
+                response = "Thanks for the information. " + config.moreTraining
+    elif (currentMode == "moretraining"):
+        if (userInput.lower() == "Exit".lower()):
+            response = defaultMode()
+        if (userInput.lower() == "yes".lower() or userInput.lower() == "y"):
+            currentMode = "training"
+            response = config.trainingResponse1
+        elif(userInput.lower() == "no".lower() or userInput.lower() == "n"):
+            response = defaultMode()
+        else:
+            response = "Please enter yes or no"
 
 
     elif (currentMode == "feedback"):
         if (userInput.lower() == "Exit".lower()):
             response = defaultMode()
+        elif (userInput.isalpha()):
+            response = "Please enter the number for Response ID"
         else:
             id = int((unicode.encode(userInput)))
             conn = database.connectToDB()
@@ -464,8 +477,10 @@ def currentWorkingMode(userInput):
         if (userInput.lower() == "yes".lower() or userInput.lower() == "y"):
             currentMode = "feedback"
             response = config.feedbackResponse1
-        else:
+        elif(userInput.lower() == "no".lower() or userInput.lower() == "n"):
             response = defaultMode()
+        else:
+            response = "Please enter yes or no"
     elif (currentMode == "wrongfeedback"):
         if (userInput.lower() == "Exit".lower()):
             response = defaultMode()
@@ -491,8 +506,8 @@ def currentWorkingMode(userInput):
             response = defaultMode()
         else:
             questions, keywords = userInputQuestionKeyword(userInput)
-            # response = weather.getWeather(keywords)
-            response = "weather mode initiated"
+            response = weather.getWeather(keywords)
+            #response = "weather mode initiated"
 
     else:
         if (userInput.lower() == "Exit".lower()):
