@@ -51,7 +51,7 @@ def handle_command(userInput, channel, user):
     """
     log.writetofile("entering handle command function")
     log.writetofile("User Input: " + userInput)
-    response,image_url = botController.currentWorkingMode(userInput)
+    response,image_url,question = botController.currentWorkingMode(userInput)
     print response
     log.writetofile("bot reply: " + response)
     user = '<@{user}>'.format(user=user)
@@ -62,6 +62,18 @@ def handle_command(userInput, channel, user):
         log.writetofile("Sending Image")
     else:
         log.writetofile("No Image to be sent")
+
+    if(question == "where"):
+        attachments = [
+            {
+                "fallback": "http://www.sjsu.edu/map/docs/campus-map.pdf",
+                "title": "SJSU campus map",
+                "title_link": "http://www.sjsu.edu/map/docs/campus-map.pdf",
+                "color": "#36a64f",
+            }
+        ]
+        send_image(channel, attachments)
+        log.writetofile("Sending map")
 
 def parse_slack_output(slack_rtm_output):
     """

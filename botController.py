@@ -5,12 +5,11 @@ import config
 import operator
 import time
 import sendemail
-#import weather
+# import weather
 from textblob import TextBlob
 from textblob.classifiers import NaiveBayesClassifier
 import random
 import sara
-
 
 currentMode = "default"
 userInputQuestions = []
@@ -32,59 +31,60 @@ def getReply(userInput):
     userInputArray = lang_processor.split_message(userInput)
     questions, keywords = userInputQuestionKeyword(userInput)
 
-    response,image_url = handle_request(questions, keywords, userInput,userInputArray, conn)
+    response, image_url = handle_request(questions, keywords, userInput, userInputArray, conn)
 
-    return response,image_url
+    return response, image_url, questions[0]
 
 
 def handle_request(questions, keywords, userInput, userInputArray, conn):
     count = len(questions)
     image_url = "none"
     if (count == 0):
-        response = common_replies(userInputArray)
+        response = common_replies(userInputArray, conn)
     elif (count == 1):
 
         if (conn != "error"):
-            response,image_url = pickBestResponse(keywords,userInput,userInputArray,questions[0],conn)
-            print response
+            response, image_url = pickBestResponse(keywords, userInput, userInputArray, questions[0], conn)
             response = lang_processor.generateResponse(userInputArray, questions[0], response)
-            print response
+
         else:
             response = config.dbConnectionError
 
     else:
         response = config.twoQuestionsError
 
-    return response,image_url
+    return response, image_url
 
 
 def pickBestResponse(keywords, userInput, userInputArray, questionPartInUserInput, conn):
     image_url = "none"
-    pastResponses,isPastResponseExists =  database.getPastResponseFromUserInput(userInput,conn)
+    pastResponses, isPastResponseExists = database.getPastResponseFromUserInput(userInput, conn)
 
     if isPastResponseExists:
         pastResponses.sort(key=operator.itemgetter('CurrentScore'), reverse=True)
         pastResponse = pastResponses[0]
-        print pastResponse['CurrentScore']
-        if int(pastResponse['CurrentScore'])>0:
+        if int(pastResponse['CurrentScore']) > 0:
             log.writetofile("I am giving a reply from my past experiences")
             response = pastResponse['Answer']
             image_url = pastResponse['Image_Url']
         else:
-            log.writetofile("Score for my past experiences does not look good. I am gonna look for new responses in the DB")
-            response,image_url = getBestResponseFromDB(keywords, userInput, userInputArray, questionPartInUserInput, conn,True,pastResponse['Answer'])
+            log.writetofile(
+                "Score for my past experiences does not look good. I am gonna look for new responses in the DB")
+            response, image_url = getBestResponseFromDB(keywords, userInput, userInputArray, questionPartInUserInput,
+                                                        conn, True, pastResponse['Answer'])
     else:
         log.writetofile("Getting new response from DB")
-        response,image_url = getBestResponseFromDB(keywords, userInput, userInputArray, questionPartInUserInput, conn,False,"none")
+        response, image_url = getBestResponseFromDB(keywords, userInput, userInputArray, questionPartInUserInput, conn,
+                                                    False, "none")
 
-    return response,image_url
+    return response, image_url
 
 
-
-def getBestResponseFromDB(keywords,userInput,userInputArray,questionPartInUserInput,conn,isNegativeScore,previousAnswer):
+def getBestResponseFromDB(keywords, userInput, userInputArray, questionPartInUserInput, conn, isNegativeScore,
+                          previousAnswer):
     image_url = "none"
     if isNegativeScore:
-        DBResponses = database.getAllResponsesExceptAnswerWithNegativeScore(conn,previousAnswer)
+        DBResponses = database.getAllResponsesExceptAnswerWithNegativeScore(conn, previousAnswer)
     else:
         DBResponses = database.getAllResponses(conn)
     DBResponses = getMatchingKeywords(DBResponses, keywords)
@@ -93,14 +93,15 @@ def getBestResponseFromDB(keywords,userInput,userInputArray,questionPartInUserIn
 
     for dbResponse in DBResponses:
         # 100% match for the keywords in user input with db keywords. Return this response
-        #to do: two questions with 100% match?? match question!!
+        # to do: two questions with 100% match?? match question!!
         if dbResponse['nonMatchingKeyWords'] == "" and dbResponse['nonMatchingKeywordsInDB'] == "":
             log.writetofile("100% match found")
             image_url = dbResponse["image_url"]
-            database.storeSentResponse(userInput, dbResponse['answer'], keywords, questionPartInUserInput, conn, image_url)
-            return dbResponse['answer'],image_url
-        #not 100%.
-        #perform spell check and find similar words
+            database.storeSentResponse(userInput, dbResponse['answer'], keywords, questionPartInUserInput, conn,
+                                       image_url)
+            return dbResponse['answer'], image_url
+        # not 100%.
+        # perform spell check and find similar words
         else:
             if (dbResponse["numberOfMatchingKeywords"] >= 1):
                 nonMatchingKeywords = dbResponse['nonMatchingKeyWords'].split(',')
@@ -111,11 +112,11 @@ def getBestResponseFromDB(keywords,userInput,userInputArray,questionPartInUserIn
                     if (correctedKeyword != nonMatchingKeyword):
                         log.writetofile("spelling corrected:" + correctedKeyword)
                     synonyms = lang_processor.getSynonyms(correctedKeyword)
-                    #log.writetofile("synonyms for user input " + correctedKeyword + ":" + str(synonyms))
+                    # log.writetofile("synonyms for user input " + correctedKeyword + ":" + str(synonyms))
 
                     for nonMatchingKeyword in nonMatchingKeywordsinDB:
                         DBsynonyms = lang_processor.getSynonyms(nonMatchingKeyword)
-                        #log.writetofile("synonyms for DB " + nonMatchingKeyword + ":" + str(DBsynonyms))
+                        # log.writetofile("synonyms for DB " + nonMatchingKeyword + ":" + str(DBsynonyms))
 
                         if (set(DBsynonyms) == set(synonyms)):
                             log.writetofile("matching synonym found.")
@@ -129,60 +130,60 @@ def getBestResponseFromDB(keywords,userInput,userInputArray,questionPartInUserIn
     responseNumber = 1
     for dbResponse in DBResponses:
 
-            if responseNumber == 1:
-                firstResponseMatchingCount = dbResponse["numberOfMatchingKeywords"]
-                response = dbResponse["answer"]
-                responseNumber = responseNumber+1
-                questionPart = dbResponse["question"]
-                image_url = dbResponse["image_url"]
+        if responseNumber == 1:
+            firstResponseMatchingCount = dbResponse["numberOfMatchingKeywords"]
+            response = dbResponse["answer"]
+            responseNumber = responseNumber + 1
+            questionPart = dbResponse["question"]
+            image_url = dbResponse["image_url"]
+        else:
+            if (firstResponseMatchingCount != 0):
+                if firstResponseMatchingCount == dbResponse["numberOfMatchingKeywords"]:
+                    if questionPart == questionPartInUserInput:
+                        log.writetofile("2 responses.picking bases on question")
+                    elif questionPartInUserInput == dbResponse["question"]:
+                        response = dbResponse["answer"]
+                        image_url = dbResponse["image_url"]
+                        log.writetofile("2 responses.picking 2nd based on question")
+                    else:
+                        log.writetofile("2 responses.ambiguos")
+                        isAmbiguousReply = True
+                        image_url = dbResponse["image_url"]
+                        response = config.ambiguousInput
             else:
-                if(firstResponseMatchingCount != 0):
-                    if firstResponseMatchingCount == dbResponse["numberOfMatchingKeywords"]:
-                        if questionPart == questionPartInUserInput:
-                            log.writetofile("2 responses.picking bases on question")
-                        elif questionPartInUserInput == dbResponse["question"]:
-                            response = dbResponse["answer"]
-                            image_url = dbResponse["image_url"]
-                            log.writetofile("2 responses.picking 2nd based on question")
-                        else:
-                            log.writetofile("2 responses.ambiguos")
-                            isAmbiguousReply = True
-                            image_url = dbResponse["image_url"]
-                            response = config.ambiguousInput
+                log.writetofile("0 matching keywords")
+                isAmbiguousReply = True
+                image_url = dbResponse["image_url"]
+                response = config.ambiguousInput
 
-                else:
-                    log.writetofile("0 matching keywords")
-                    isAmbiguousReply = True
-                    response = config.ambiguousInput
-                    image_url = dbResponse["image_url"]
-                    print response
-                    print config.ambiguousInput
+            if (isAmbiguousReply):
+                log.writetofile("not storing in sent responses")
+            else:
+                database.storeSentResponse(userInput, response, keywords, questionPartInUserInput, conn, image_url)
+                log.writetofile("storing sent response")
 
-                if(isAmbiguousReply):
-                    log.writetofile("not storing in sent responses")
-                else:
-                    database.storeSentResponse(userInput, response, keywords, questionPartInUserInput, conn,image_url)
-                    log.writetofile("storing sent response")
-
-                return response,image_url
+            return response, image_url
 
     # pastResponses = database.getPastResponseFromUserInput(userInput,conn)
     return config.noAppropriateResponseFound
 
 
 def check_for_greeting(input1):
- GREETING_RESPONSES = ["Hi!,what's up with you?","'sup bro :wink:", "hey :smiley:","hi..Welcome :smiley:", "How can i help you?","Sure, What help do u need?", "I'm bored! Give me good questions! :sob:"]
- response = random.choice(GREETING_RESPONSES)
- return response
+    GREETING_RESPONSES = ["Hi!,what's up with you?", "'sup bro :wink:", "hey :smiley:", "hi..Welcome :smiley:",
+                          "How can i help you?", "Sure, What help do u need?",
+                          "I'm bored! Give me good questions! :sob:"]
+    response = random.choice(GREETING_RESPONSES)
+    return response
+
 
 def check_for_complaints(input2):
- SORRY_RESPONSES = ["sorry :neutral_face:", "I will try to improve my answers :ok_hand:","i'm really sorry :sob:","I apologize for being late to reply :pray:"]
- response = random.choice(SORRY_RESPONSES)
- return response
+    SORRY_RESPONSES = ["sorry :neutral_face:", "I will try to improve my answers :ok_hand:", "i'm really sorry :sob:",
+                       "I apologize for being late to reply :pray:"]
+    response = random.choice(SORRY_RESPONSES)
+    return response
 
-def common_replies(user_input_array):
 
-    conn = database.connectToDB()
+def common_replies(user_input_array, conn):
     question1 = user_input_array[0]
 
     train = [
@@ -204,14 +205,16 @@ def common_replies(user_input_array):
     ]
     cl = NaiveBayesClassifier(train)
 
-
     for i in user_input_array:
         ques = ' '.join(user_input_array)
     blob = TextBlob(ques, classifier=cl)
     sentiment = blob.classify()
     print (sentiment)
     log.writetofile("entering positive or negative checking")
-    common_questions = ['request appointment','sjsu main campus map','share cmpe273 greensheet','slack manual assistance error problem','help','improve','great day','bye tata cya see you later','thank you thanks','thanks Sara','please improve your answers','are you feeling good today?','amazing answers','bye']
+    common_questions = ['request appointment', 'sjsu main campus map', 'share cmpe273 greensheet',
+                        'slack manual assistance error problem', 'help', 'improve', 'great day',
+                        'bye tata cya see you later', 'thank you thanks', 'thanks Sara', 'please improve your answers',
+                        'are you feeling good today?', 'amazing answers', 'bye']
     for i in common_questions:
         if (sentiment == 'pos' and question1 != "is" and (ques not in ' '.join(common_questions))):
             response = check_for_greeting(ques)
@@ -241,19 +244,19 @@ def common_replies(user_input_array):
             ]
 
             response = "click on this link for greensheet"
-            sara.send_image(config.channel,attachments)
+            sara.send_image(config.channel, attachments)
 
         elif (ques in "thank you thanks"):
             response = "You are welcome! :thumbsup:"
-    
+
         elif (ques in "sjsu main campus map"):
             attachments = [
-            {
+                {
 
-                "title": "Sjsu Main Campus",
-                "title_link": "http://www.sjsu.edu/map/docs/campus-map.pdf",
-                "color": "#36a64f"
-            }
+                    "title": "Sjsu Main Campus",
+                    "title_link": "http://www.sjsu.edu/map/docs/campus-map.pdf",
+                    "color": "#36a64f"
+                }
             ]
             response = "Check out this link for main campus map!"
             sara.send_image(config.channel, attachments)
@@ -301,7 +304,6 @@ def common_replies(user_input_array):
             response = "I'm sorry, I don't understand! Sometimes I have an easier time with a few simple keywords.\n "
 
         return response
-
 
 
 # Function to get matching Keywords
@@ -361,6 +363,7 @@ def getMatchingKeywords(allResponses, keywords):
 # Function to get the Current Mode
 def currentWorkingMode(userInput):
     image_url = "none"
+    questionPart = "none"
     global currentMode
     if (currentMode == "default"):
         if (userInput == "1"):
@@ -392,18 +395,18 @@ def currentWorkingMode(userInput):
         if (userInput.lower() == "Exit".lower()):
             response = defaultMode()
         else:
-            response,image_url= getReply(userInput)
+            response, image_url, questionPart = getReply(userInput)
             log.writetofile("Calling function botController getReply")
 
     elif (currentMode == "training"):
         if (userInput.lower() == "Exit".lower()):
             response = defaultMode()
         else:
-            global userInputQuestions,userInputKeywords
-            userInputQuestions,userInputKeywords = userInputQuestionKeyword(userInput)
-            #print type(userInputQuestions)
-            #print userInputQuestions
-            if(len(userInputQuestions)):
+            global userInputQuestions, userInputKeywords
+            userInputQuestions, userInputKeywords = userInputQuestionKeyword(userInput)
+            # print type(userInputQuestions)
+            # print userInputQuestions
+            if (len(userInputQuestions)):
                 currentMode = "training2"
                 response = config.trainingResponse2
     elif (currentMode == "training2"):
@@ -445,8 +448,8 @@ def currentWorkingMode(userInput):
             global responseID
             conn = database.connectToDB()
             id = int((unicode.encode(responseID)))
-            database.updatePastResponse(id,userInput,conn)
-            if(userInput.lower()=="yes".lower() or userInput.lower()=="y"):
+            database.updatePastResponse(id, userInput, conn)
+            if (userInput.lower() == "yes".lower() or userInput.lower() == "y"):
                 response = config.feedbackResponseYes
                 currentMode = "morefeedback"
             if (userInput.lower() == "no".lower() or userInput.lower() == "n"):
@@ -480,12 +483,12 @@ def currentWorkingMode(userInput):
 
             response = config.feedbackResponseYes
             currentMode = "morefeedback"
-    elif (currentMode=="weather"):
+    elif (currentMode == "weather"):
         if (userInput.lower() == "Exit".lower()):
             response = defaultMode()
         else:
-            questions,keywords = userInputQuestionKeyword(userInput)
-            #response = weather.getWeather(keywords)
+            questions, keywords = userInputQuestionKeyword(userInput)
+            # response = weather.getWeather(keywords)
             response = "weather mode initiated"
 
     else:
@@ -493,8 +496,8 @@ def currentWorkingMode(userInput):
             response = defaultMode()
         else:
             response = "Call Statistics Function"
-        
-    return response,image_url
+
+    return response, image_url, questionPart
 
 
 # Function for default mode when userinput==0
@@ -508,7 +511,7 @@ def defaultMode():
 def getMessage():
     currentTime = int(time.strftime('%H:%M').split(':')[0])
     if currentTime >= 6 and currentTime <= 12:
-        response = "Hello!"+" "+ "Good morning!"
+        response = "Hello!" + " " + "Good morning!"
     elif currentTime >= 12 and currentTime <= 18:
         response = "Hello" + " " + "Good afternoon!"
     elif currentTime >= 18 and currentTime <= 22:
