@@ -34,8 +34,12 @@ def getReply(userInput):
     questions, keywords = userInputQuestionKeyword(userInput)
 
     response, image_url = handle_request(questions, keywords, userInput, userInputArray, conn)
-
-    return response, image_url, questions[0]
+    if not questions:
+        questionPart = "none"
+    else:
+        questionPart = questions[0]
+        
+    return response, image_url, questionPart
 
 
 def handle_request(questions, keywords, userInput, userInputArray, conn):
