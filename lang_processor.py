@@ -72,3 +72,5 @@ def generateResponse(userInputArray, ques, response):
 
        userInputArray = [str(r) for r in userInputArray]
        return ' '.join(userInputArray)
+   else:
+       return response
