@@ -10,6 +10,8 @@ from textblob import TextBlob
 from textblob.classifiers import NaiveBayesClassifier
 import random
 import sara
+#from selenium import webdriver
+
 
 currentMode = "default"
 userInputQuestions = []
@@ -67,6 +69,7 @@ def pickBestResponse(keywords, userInput, userInputArray, questionPartInUserInpu
             log.writetofile("I am giving a reply from my past experiences")
             response = pastResponse['Answer']
             image_url = pastResponse['Image_Url']
+            database.storeMetricInES(userInput,response)
         else:
             log.writetofile(
                 "Score for my past experiences does not look good. I am gonna look for new responses in the DB")
@@ -89,7 +92,7 @@ def getBestResponseFromDB(keywords, userInput, userInputArray, questionPartInUse
         DBResponses = database.getAllResponses(conn)
     DBResponses = getMatchingKeywords(DBResponses, keywords)
     DBResponses.sort(key=operator.itemgetter('numberOfMatchingKeywords'), reverse=True)
-    log.writetofile("sorted:" + str(DBResponses))
+    #log.writetofile("sorted:" + str(DBResponses))
 
     for dbResponse in DBResponses:
         # 100% match for the keywords in user input with db keywords. Return this response
@@ -103,14 +106,11 @@ def getBestResponseFromDB(keywords, userInput, userInputArray, questionPartInUse
         # not 100%.
         # perform spell check and find similar words
         else:
-            if (dbResponse["numberOfMatchingKeywords"] >= 1):
                 nonMatchingKeywords = dbResponse['nonMatchingKeyWords'].split(',')
                 nonMatchingKeywordsinDB = dbResponse['nonMatchingKeywordsInDB'].split(',')
 
                 for nonMatchingKeyword in nonMatchingKeywords:
                     correctedKeyword = lang_processor.autocorrect(nonMatchingKeyword)
-                    if (correctedKeyword != nonMatchingKeyword):
-                        log.writetofile("spelling corrected:" + correctedKeyword)
                     synonyms = lang_processor.getSynonyms(correctedKeyword)
                     # log.writetofile("synonyms for user input " + correctedKeyword + ":" + str(synonyms))
 
@@ -122,9 +122,8 @@ def getBestResponseFromDB(keywords, userInput, userInputArray, questionPartInUse
                             log.writetofile("matching synonym found.")
                             dbResponse["numberOfMatchingKeywords"] = dbResponse["numberOfMatchingKeywords"] + 1;
 
-    log.writetofile("after synonyms : " + str(DBResponses))
-
     DBResponses.sort(key=operator.itemgetter('numberOfMatchingKeywords'), reverse=True)
+    log.writetofile("after synonyms : " + str(DBResponses))
 
     isAmbiguousReply = False
     responseNumber = 1
@@ -495,7 +494,11 @@ def currentWorkingMode(userInput):
         if (userInput.lower() == "Exit".lower()):
             response = defaultMode()
         else:
-            response = "Call Statistics Function"
+            #driver = webdriver.Chrome()
+            #driver.get('http://localhost:5601/goto/2d0d499fbddc57172334c009f2ab5614')
+            #driver.save_screenshot('vivek.png')
+            #driver.quit()
+            response = "to view statistics visit, visit http://localhost:5601/goto/2d0d499fbddc57172334c009f2ab5614"
 
     return response, image_url, questionPart
 
