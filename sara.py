@@ -60,9 +60,11 @@ def handle_command(userInput, channel, user):
         attachments = [{"title":response,"image_url": image_url}]
         send_image(channel,attachments)
         log.writetofile("Sending Image")
+        creatinglogfile()
+
     else:
         log.writetofile("No Image to be sent")
-
+        creatinglogfile()
     if(question == "where"):
         attachments = [
             {
@@ -111,3 +113,20 @@ def slackListeToChannel():
     else:
         log.writetofile("Connection failed. Invalid Slack token or bot ID?")
         print("Connection failed. Invalid Slack token or bot ID?")
+
+#Function to create log file based on current time
+def creatinglogfile():
+    if (botController.currentMode == "chat"):
+        fileLog = str(time.strftime('%m%d%Y%H%M%S')) + ".txt"
+        log.writetologfile("/logs/" + fileLog)
+        log.truncateFile()
+    elif (botController.currentMode == "moretraining"):
+        fileLog = str(time.strftime('%m%d%Y%H%M%S')) + ".txt"
+        log.writetologfile("/logs/" + fileLog)
+        log.truncateFile()
+    elif (botController.currentMode == "morefeedback"):
+        fileLog = str(time.strftime('%m%d%Y%H%M%S')) + ".txt"
+        log.writetologfile("/logs/" + fileLog)
+        log.truncateFile()
+    else:
+        pass
