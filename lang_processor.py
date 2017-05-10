@@ -17,6 +17,8 @@ def split_message(userInput):
   for str in userInputList:
       userInputListWithAlphaNumeric.append(re.sub(r'\W+', '', str))
   #log.writetofile("UserInput list having only alphanumeric strings" + str(userInputListWithAlphaNumeric))
+  while '' in userInputListWithAlphaNumeric:
+      userInputListWithAlphaNumeric.remove('')
   return userInputListWithAlphaNumeric
 
 def seperateQuestionAndKeywords(input):
@@ -74,3 +76,14 @@ def generateResponse(userInputArray, ques, response):
        return ' '.join(userInputArray)
    else:
        return response
+
+def removeSpaceKeyword(matchedKeywordList):
+    print "before\n"+matchedKeywordList
+    matchedKeywordList = matchedKeywordList.replace(" ","")
+    print matchedKeywordList
+    return matchedKeywordList
+
+def getAlphaNumericString(userInput):
+    pattern = re.compile('[^A-Za-z0-9]')
+    new_string = pattern.sub(' ', userInput)
+    return new_string
