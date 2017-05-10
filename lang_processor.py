@@ -34,7 +34,13 @@ def seperateQuestionAndKeywords(input):
             keyWordsInUserInput.append(inp)
             log.writetofile("keyword: " + inp)
 
+    if(checkIfOneElementMatches(config.whQuestionList,questionsInUserInput)):
+        questionsInUserInput.sort(reverse=True)
+
     return questionsInUserInput, keyWordsInUserInput
+
+def checkIfOneElementMatches(a,b):
+    return not set(a).isdisjoint(b)
 
 
 def removeUnwantedWords(input):
@@ -42,7 +48,7 @@ def removeUnwantedWords(input):
     posTagged = nltk.pos_tag(input)
     simplifiedTags = [(word, nltk.map_tag('en-ptb', 'universal', tag)) for word, tag in posTagged]
     for key,value in simplifiedTags:
-        if (key.lower() in config.questionList) or (value not in 'ADP' and value not in 'DET' and value not in 'CONJ' and value not in 'PRT' and key not in 'is'):
+        if (key.lower() in config.questionList) or (value not in 'ADP' and value not in 'PRON' and value not in 'DET' and value not in 'CONJ' and value not in 'PRT' and key not in 'is'):
             userInputWithOnlyQuestionAndKeywords.append(key)
         else:
             log.writetofile("blacklisted word: " + key)

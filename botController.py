@@ -96,16 +96,10 @@ def getBestResponseFromDB(keywords, userInput, userInputArray, questionPartInUse
     #log.writetofile("sorted:" + str(DBResponses))
 
     for dbResponse in DBResponses:
-        # 100% match for the keywords in user input with db keywords. Return this response
-        # to do: two questions with 100% match?? match question!!
+        # 100% match for the keywords in user input with atleast one response in db. NO need to autocorrect or find synonyms for other responses
+
         if dbResponse['nonMatchingKeyWords'] == "" and dbResponse['nonMatchingKeywordsInDB'] == "":
-            log.writetofile("100% match found")
-            image_url = dbResponse["image_url"]
-            sentResponseID = database.storeSentResponse(userInput, dbResponse['answer'], keywords, questionPartInUserInput, conn,
-                                       image_url)
-            print sentResponseID
-            response = dbResponse['answer'] + config.giveFeedback + str(sentResponseID)
-            return response , image_url
+            break
         # not 100%.
         # perform spell check and find similar words
         else:
@@ -390,8 +384,8 @@ def getMatchingKeywords(allResponses, keywords):
         del currentKeywordList[:]
         del notMatchingKeywordList[:]
 
-    log.writetofile("Adding matching keyword")
-    log.writetofile(str(allResponses))
+    #log.writetofile("Adding matching keyword")
+    #log.writetofile(str(allResponses))
     return allResponses
 
 
