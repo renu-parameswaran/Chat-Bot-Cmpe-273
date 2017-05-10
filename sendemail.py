@@ -21,7 +21,7 @@ def SendEmail():
         server.login(username, password)
         server.sendmail(sender, receivers, message)
         server.quit()
-        resp = "email to professor sithu successfully sent!"
+        resp = "email to professor Sithu Aung successfully sent!"
     except  Exception:
         resp = "Error: unable to send email, please enter valid email address"
     return resp

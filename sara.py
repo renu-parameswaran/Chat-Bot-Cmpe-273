@@ -5,6 +5,8 @@ import log
 import botController
 import config
 import lang_processor
+from datetime import datetime
+import database
 
 # instantiate Slack & Twilio clients
 slack_client =  SlackClient(config.appKey)
@@ -52,13 +54,16 @@ def handle_command(userInput, channel, user):
     """
     log.writetofile("entering handle command function")
     log.writetofile("User Input: " + userInput)
+    timestamp1 = datetime.now()
     userInput = lang_processor.getAlphaNumericString(userInput)
-    print "alpha:" + userInput
+    previousMode = botController.currentMode
     response,image_url,question = botController.currentWorkingMode(userInput)
     print response
     log.writetofile("bot reply: " + response)
     user = '<@{user}>'.format(user=user)
     send_message(channel,"Hi" + user + "!. "+response)
+    timetaken = datetime.now() - timestamp1
+    log.writetofile("Time taken: " + str(timetaken))
     if (image_url!="none"):
         attachments = [{"title":response,"image_url": image_url}]
         send_image(channel,attachments)
@@ -79,7 +84,8 @@ def handle_command(userInput, channel, user):
         ]
         send_image(channel, attachments)
         log.writetofile("Sending map")
-
+    if botController.currentMode=="chat" and previousMode != "default":
+        database.pushTimeTakenToES(timetaken)
 def parse_slack_output(slack_rtm_output):
     """
         The Slack Real Time Messaging API is an events firehose.
@@ -133,3 +139,4 @@ def creatinglogfile():
         log.truncateFile()
     else:
         pass
+

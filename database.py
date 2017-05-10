@@ -276,3 +276,12 @@ def storeMetricInES(userInput, response):
     timestamp = datetime.now()
     es.index(index="cache", doc_type="metrics", id=timestamp,
              body={"question": userInput, "answer": response, "timestamp": timestamp})
+
+
+def pushTimeTakenToES(timeTaken):
+
+    es = Elasticsearch()
+    timestamp = datetime.now()
+    print timeTaken.total_seconds()
+    es.index(index="time", doc_type="metrics", id=timestamp,
+             body={"timetaken": timeTaken.total_seconds()})

@@ -51,7 +51,8 @@ def handle_request(questions, keywords, userInput, userInputArray, conn):
 
         if (conn != "error"):
             response, image_url = pickBestResponse(keywords, userInput, userInputArray, questions[0], conn)
-            #response = lang_processor.generateResponse(userInputArray, questions[0], response)
+            if questions[0] in config.whQuestionList:
+                response = lang_processor.generateResponse(userInputArray, questions[0], response)
 
         else:
             response = config.dbConnectionError
@@ -100,6 +101,7 @@ def getBestResponseFromDB(keywords, userInput, userInputArray, questionPartInUse
 
         if dbResponse['nonMatchingKeyWords'] == "" and dbResponse['nonMatchingKeywordsInDB'] == "":
             break
+
         # not 100%.
         # perform spell check and find similar words
         else:
@@ -543,7 +545,7 @@ def currentWorkingMode(userInput):
             #driver.get('http://localhost:5601/goto/2d0d499fbddc57172334c009f2ab5614')
             #driver.save_screenshot('vivek.png')
             #driver.quit()
-            response = "to view statistics visit, visit http://localhost:5601/goto/2d0d499fbddc57172334c009f2ab5614"
+            response = "to view statistics visit, visit http://localhost:5601/goto/a7858fc1a3f85a385f6e926a1f776629"
 
     return response, image_url, questionPart
 
