@@ -4,6 +4,7 @@ from slackclient import SlackClient
 import log
 import botController
 import config
+import lang_processor
 
 # instantiate Slack & Twilio clients
 slack_client =  SlackClient(config.appKey)
@@ -51,6 +52,8 @@ def handle_command(userInput, channel, user):
     """
     log.writetofile("entering handle command function")
     log.writetofile("User Input: " + userInput)
+    userInput = lang_processor.getAlphaNumericString(userInput)
+    print "alpha:" + userInput
     response,image_url,question = botController.currentWorkingMode(userInput)
     print response
     log.writetofile("bot reply: " + response)
