@@ -2,6 +2,7 @@ import pymysql
 import log
 import config
 import time
+import lang_processor
 from datetime import datetime
 from elasticsearch import Elasticsearch
 
@@ -83,7 +84,10 @@ def storeSentResponse(userInput, answer, keywords, questions, conn, img_url):
     es.index(index="sararesponses", doc_type="metrics", id=timestamp,
              body={"question": userInput, "answer": answer, "timestamp": timestamp})
     log.writetofile("Insert to db successfully done")
+    sentResponseID = conn.insert_id()
+
     conn.commit()
+    return sentResponseID
 
 
 def getAllPastResponses(questions, keywords, conn):
@@ -138,6 +142,7 @@ def storeNewResponse(ans, matchedKeywordList, ques, conn):
         cur = conn.cursor()
         # decodedKeyword = (unicode.encode(matchedKeywordList))
         # decodedQuestion = ((unicode.encode(ques)))
+        matchedKeywordList=lang_processor.removeSpaceKeyword(matchedKeywordList)
         insertStmt = "insert into responses (Answer,Keywords,Question,image_url) values ('%s','%s','%s','none')" % (
         ans, matchedKeywordList, ques)
 
