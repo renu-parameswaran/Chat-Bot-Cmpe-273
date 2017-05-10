@@ -47,17 +47,14 @@ def handle_request(questions, keywords, userInput, userInputArray, conn):
     image_url = "none"
     if (count == 0):
         response = common_replies(userInputArray, conn)
-    elif (count == 1):
+    else:
 
         if (conn != "error"):
             response, image_url = pickBestResponse(keywords, userInput, userInputArray, questions[0], conn)
-            response = lang_processor.generateResponse(userInputArray, questions[0], response)
+            #response = lang_processor.generateResponse(userInputArray, questions[0], response)
 
         else:
             response = config.dbConnectionError
-
-    else:
-        response = config.twoQuestionsError
 
     return response, image_url
 
@@ -71,7 +68,7 @@ def pickBestResponse(keywords, userInput, userInputArray, questionPartInUserInpu
         pastResponse = pastResponses[0]
         if int(pastResponse['CurrentScore']) > 0:
             log.writetofile("I am giving a reply from my past experiences")
-            response = pastResponse['Answer']
+            response = pastResponse['Answer'] + config.giveFeedback + str(pastResponse['ID'])
             image_url = pastResponse['Image_Url']
             database.storeMetricInES(userInput,response)
         else:
@@ -104,9 +101,11 @@ def getBestResponseFromDB(keywords, userInput, userInputArray, questionPartInUse
         if dbResponse['nonMatchingKeyWords'] == "" and dbResponse['nonMatchingKeywordsInDB'] == "":
             log.writetofile("100% match found")
             image_url = dbResponse["image_url"]
-            database.storeSentResponse(userInput, dbResponse['answer'], keywords, questionPartInUserInput, conn,
+            sentResponseID = database.storeSentResponse(userInput, dbResponse['answer'], keywords, questionPartInUserInput, conn,
                                        image_url)
-            return dbResponse['answer'], image_url
+            print sentResponseID
+            response = dbResponse['answer'] + config.giveFeedback + str(sentResponseID)
+            return response , image_url
         # not 100%.
         # perform spell check and find similar words
         else:
@@ -162,8 +161,10 @@ def getBestResponseFromDB(keywords, userInput, userInputArray, questionPartInUse
             if (isAmbiguousReply):
                 log.writetofile("not storing in sent responses")
             else:
-                database.storeSentResponse(userInput, response, keywords, questionPartInUserInput, conn, image_url)
+                sentResponseID = database.storeSentResponse(userInput, response, keywords, questionPartInUserInput, conn, image_url)
                 log.writetofile("storing sent response")
+                print sentResponseID
+                response = response + config.giveFeedback + str(sentResponseID)
 
             return response, image_url
 
@@ -186,8 +187,7 @@ def check_for_complaints(input2):
     return response
 
 
-def common_replies(user_input_array):
-    conn = database.connectToDB()
+def common_replies(user_input_array,conn):
     question1 = user_input_array[0]
 
     train = [
@@ -220,13 +220,13 @@ def common_replies(user_input_array):
                         'great day', 'bye tata cya see you later', 'thank you thanks', 'thanks Sara',
                         'please improve your answers', 'are you feeling good today?', 'amazing answers', 'bye']
     for i in common_questions:
-        if (sentiment == 'pos' and question1 != "is" and (ques not in ' '.join(common_questions))):
+        if (sentiment == 'pos' and question1 != "is" and question1 != "does" and (ques not in ' '.join(common_questions))):
             response = check_for_greeting(ques)
 
-        elif (sentiment == 'neg' and question1 != "is" and (ques not in ' '.join(common_questions))):
+        elif (sentiment == 'neg' and question1 != "is" and question1 != "does" and (ques not in ' '.join(common_questions))):
             response = check_for_complaints(ques)
 
-        elif (question1 == "is"):
+        elif (question1 == "is" or question1 == "does"):
             keywords = lang_processor.removeUnwantedWords(user_input_array)
             resp = database.isCorrectAnswer(keywords, conn)
             if (resp == True):
