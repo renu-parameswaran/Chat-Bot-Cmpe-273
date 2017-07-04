@@ -1,0 +1,13 @@
+python(2.7)
+autocorrect (0.3.0)
+elasticsearch (5.3.0)
+nltk (3.2.2)
+pip (9.0.1)
+PyMySQL (0.7.11)
+python-dateutil (2.5.3)
+requests (2.13.0)
+slackclient (1.0.5)
+textblob (0.12.0)
+mysql
+elastic search
+kibana
